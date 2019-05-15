@@ -33,7 +33,7 @@ module.exports.initialize_chat = function (req, res) {
         req.body.api_session_id = create_session_id();
 
         var session_data = {
-            communication_type:"http",
+            communication_type: "http",
             call_back_url: req.body.call_back_url, session_id: req.body.api_session_id,
             client_data: {
                 jti: req.params.CustomerID,
@@ -42,8 +42,8 @@ module.exports.initialize_chat = function (req, res) {
                 tenant: tenantId,
                 channel: req.body.Channel,
                 profile: req.body.profile,
-                to:req.params.CustomerID,
-                sessionId:req.body.api_session_id
+                to: req.params.CustomerID,
+                sessionId: req.body.api_session_id
             }
         };
 
@@ -125,37 +125,53 @@ module.exports.initialize_chat = function (req, res) {
 
 };
 
-module.exports.end_chat=function (req,res) {
-    try{
+function remove_chat_session(session_id) {
+    try {
+        var jsonString;
+        redisClient.hdel(bot_usr_redis_id, session_id, function (err, obj) {
+            if (obj) {
+                jsonString = messageFormatter.FormatMessage(undefined, "end_chat", true, undefined);
+                logger.info('remove_chat_session - : %s ', jsonString);
+            } else {
+                jsonString = messageFormatter.FormatMessage(new Error("Invalid Session ID"), "EXCEPTION", false, undefined);
+                logger.error('remove_chat_session - Exception occurred : %s ', jsonString);
+            }
+        });
+    } catch (ex) {
+        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('remove_chat_session - Exception occurred : %s ', jsonString);
+    }
+}
+
+module.exports.end_chat = function (req, res) {
+    try {
         var jsonString;
         var agent_id = req.params.AgentID;
         var session_id = req.params.SessionID;
-        if(agent_id && session_id){
+        if (agent_id && session_id) {
             redisClient.hget(bot_usr_redis_id, session_id, function (err, obj) {
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
-                    socket_handler.send_message_agent(agent_id, 'client', call_back_data.client_data);
+                    socket_handler.send_message_agent(agent_id, 'sessionend', call_back_data.client_data);
                     jsonString = messageFormatter.FormatMessage(undefined, "end_chat", true, undefined);
                     logger.info('end_chat - : %s ', jsonString);
                 } else {
                     jsonString = messageFormatter.FormatMessage(new Error("Invalid Session ID"), "EXCEPTION", false, undefined);
                     logger.error('end_chat - Exception occurred : %s ', jsonString);
                 }
+                remove_chat_session(session_id);
             });
 
-        }else {
+        } else {
             jsonString = messageFormatter.FormatMessage(new Error("No Agent ID or Session ID"), "EXCEPTION", false, undefined);
             logger.error('end_chat - Exception occurred : %s ', jsonString);
         }
         res.end(jsonString);
-    }catch (ex)
-    {
+    } catch (ex) {
         var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('end_chat - Exception occurred : %s ', jsonString);
         res.end(jsonString);
     }
-
-
 };
 
 module.exports.agent_found = function (req, res) {
@@ -196,7 +212,7 @@ module.exports.message_back_to_client = function (req, res) {
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
                     var postdata = Object.assign({}, call_back_data, resource);
-                    Common.http_post(call_back_data.call_back_url,postdata,call_back_data.tenant,call_back_data.company);
+                    Common.http_post(call_back_data.call_back_url, postdata, call_back_data.tenant, call_back_data.company);
                     jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client", true, postdata);
                 } else {
                     jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client - session expired", false, undefined);
