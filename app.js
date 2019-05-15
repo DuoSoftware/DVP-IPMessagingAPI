@@ -54,6 +54,11 @@ RestServer.post('/DVP/API/' + version + '/IPMessengerAPI/Chat/:CustomerID', auth
     action: "write"
 }), chat_handler.initialize_chat);
 
+RestServer.del('/DVP/API/' + version + '/IPMessengerAPI/Chat/Session/:SessionID/:AgentID', authorization({
+    resource: "attribute",
+    action: "write"
+}), chat_handler.end_chat);
+
 RestServer.put('/DVP/API/' + version + '/IPMessengerAPI/Chat', authorization({
     resource: "attribute",
     action: "write"

@@ -125,6 +125,39 @@ module.exports.initialize_chat = function (req, res) {
 
 };
 
+module.exports.end_chat=function (req,res) {
+    try{
+        var jsonString;
+        var agent_id = req.params.AgentID;
+        var session_id = req.params.SessionID;
+        if(agent_id && session_id){
+            redisClient.hget(bot_usr_redis_id, session_id, function (err, obj) {
+                if (obj) {
+                    var call_back_data = JSON.parse(obj);
+                    socket_handler.send_message_agent(agent_id, 'client', call_back_data.client_data);
+                    jsonString = messageFormatter.FormatMessage(undefined, "end_chat", true, undefined);
+                    logger.info('end_chat - : %s ', jsonString);
+                } else {
+                    jsonString = messageFormatter.FormatMessage(new Error("Invalid Session ID"), "EXCEPTION", false, undefined);
+                    logger.error('end_chat - Exception occurred : %s ', jsonString);
+                }
+            });
+
+        }else {
+            jsonString = messageFormatter.FormatMessage(new Error("No Agent ID or Session ID"), "EXCEPTION", false, undefined);
+            logger.error('end_chat - Exception occurred : %s ', jsonString);
+        }
+        res.end(jsonString);
+    }catch (ex)
+    {
+        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('end_chat - Exception occurred : %s ', jsonString);
+        res.end(jsonString);
+    }
+
+
+};
+
 module.exports.agent_found = function (req, res) {
     try {
 
