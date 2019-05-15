@@ -8,7 +8,7 @@ var httpReq = require('request');
 var util = require('util');
 var uuid = require('node-uuid');
 
-var redisManager = require('./RedisManager_scoket.js');
+
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
 var socketioJwt = require("socketio-jwt");
@@ -31,7 +31,7 @@ module.exports.initialize_socket = function (rest_server) {
     io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
 };
 
-InitiateSubscriber = function (clientID, msgObj, callback) {
+/*InitiateSubscriber = function (clientID, msgObj, callback) {
 
     redisManager.IsRegisteredClient(clientID, function (errReg, status, resReg) {
 
@@ -106,7 +106,7 @@ InitiateSubscriber = function (clientID, msgObj, callback) {
             }
         }
     });
-};
+};*/
 
 io.sockets.on('connection', socketioJwt.authorize({
     secret: secret.Secret,
@@ -203,7 +203,7 @@ io.sockets.on('connection', socketioJwt.authorize({
 
     socket.emit('message', "Hello " + socket.decoded_token.iss);
 
-    socket.on('subscribe', function (subsObj) {
+    /*socket.on('subscribe', function (subsObj) {
 
         InitiateSubscriber(clientID, subsObj, function (errSubs, resSubs) {
 
@@ -214,7 +214,7 @@ io.sockets.on('connection', socketioJwt.authorize({
                 console.log("Successfully Subscribed, Key : " + resSubs);
             }
         });
-    });
+    });*/
 
 
 

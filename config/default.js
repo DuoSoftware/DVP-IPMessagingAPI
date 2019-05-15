@@ -50,7 +50,7 @@ module.exports = {
 
         },
     "Services": {
-        "call_back_url": "3ba2e85b.ngrok.io",//interactions.app.veery.cloud
+        "call_back_url": "3bfb409c.ngrok.io",//interactions.app.veery.cloud
         "call_back_url_port": '3637',
         "call_back_url_version":"1.0.0.0",
 
