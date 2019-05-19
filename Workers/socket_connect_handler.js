@@ -226,13 +226,13 @@ io.sockets.on('connection', socketioJwt.authorize({
     }*/
 });
 
-module.exports.send_message_agent = function (agent, eventName, client_data) {
+module.exports.send_message_agent = function (agent, eventName, message) {
 
-    console.log("send_message_agent  " + "agent : " + agent + " eventName : " + eventName + " : " + JSON.stringify(client_data));
+    console.log("send_message_agent  " + "agent : " + agent + " eventName : " + eventName + " : " + JSON.stringify(message));
     io.sockets.adapter.clients([agent], function (err, clients) {
         logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
         if (!err && (Array.isArray(clients) && clients.length > 0)) {
-            io.to(agent).emit(eventName, client_data);
+            io.to(agent).emit(eventName, message);
             console.log("send_message_agent sent");
             return true;
         } else {

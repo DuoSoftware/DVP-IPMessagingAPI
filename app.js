@@ -47,12 +47,26 @@ RestServer.listen(port, function () {
 
 //------------------------- End Restify Server ------------------------- \\
 
+RestServer.post('/DVP/API/' + version + '/IPMessengerAPI/Chats', authorization({
+    resource: "attribute",
+    action: "write"
+}), chat_handler.register_chat_api_client);
+
+RestServer.get('/DVP/API/' + version + '/IPMessengerAPI/Chats', authorization({
+    resource: "attribute",
+    action: "write"
+}), chat_handler.long_term_token);
 
 
 RestServer.post('/DVP/API/' + version + '/IPMessengerAPI/Chat/:CustomerID', authorization({
     resource: "attribute",
     action: "write"
 }), chat_handler.initialize_chat);
+
+RestServer.put('/DVP/API/' + version + '/IPMessengerAPI/Chat/Session/:SessionID/:AgentID', authorization({
+    resource: "attribute",
+    action: "write"
+}), chat_handler.send_message_to_agent);
 
 RestServer.del('/DVP/API/' + version + '/IPMessengerAPI/Chat/Session/:SessionID/:AgentID', authorization({
     resource: "attribute",

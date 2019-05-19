@@ -39,6 +39,8 @@ module.exports = {
     "Host":
         {
             "botclientusers":"ip_api_bot_online_users",
+            "tokenduration":120, /*in secounds*/
+            "longtermtokenduration":2592000, /*in secounds*/
             "vdomain": "localhost",
             "domain": "localhost",
             "internalport": "6689",
@@ -50,7 +52,7 @@ module.exports = {
 
         },
     "Services": {
-        "call_back_url": "3bfb409c.ngrok.io",//interactions.app.veery.cloud
+        "call_back_url": "e080f9b0.ngrok.io",
         "call_back_url_port": '3637',
         "call_back_url_version":"1.0.0.0",
 

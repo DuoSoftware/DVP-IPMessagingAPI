@@ -17,9 +17,112 @@ var bot_usr_redis_id = config.Host.botclientusers;
 
 var redisClient = redis_handler.redisClient;
 
-var create_session_id = function () {
+var token_duration = parseInt(config.Host.tokenduration);
+var long_term_token_duration = parseInt(config.Host.longtermtokenduration);
+
+var create_session_id = function (prefix) {
     var reqId = uuid.v1();
-    return reqId;
+    return util.format("%s:%s", prefix,reqId);
+};
+
+var registred_clinet = function (data) {
+    var jsonString;
+    try{
+        redisClient.rpush(bot_usr_redis_id +"_registered", data, function (err, obj) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "Failed add data to runtime memory.", false, undefined);
+                logger.error('registred_clinet - Exception occurred : %s ', jsonString);
+            }
+            else {
+                redisClient
+            }
+        });
+    }catch (ex){
+        jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('registred_clinet - Exception occurred : %s ', jsonString);
+    }
+};
+
+module.exports.register_chat_api_client = function (req, res) {
+
+    var jsonString;
+    if (req.body.hub.mode == 'subscribe' && req.body.hub.verify_token == 'token' && req.body.hub.BusinessUnit) {
+        var registration_id = create_session_id("registered");
+        var data = JSON.stringify({registration_id: registration_id, business_unit: req.body.hub.BusinessUnit});
+
+
+        redisClient.set(registration_id, data, 'EX', token_duration, function (err, obj) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "Failed Register.", false, undefined);
+                res.end(jsonString);
+            } else {
+                if (obj === "OK") {
+                    jsonString = messageFormatter.FormatMessage(undefined, "register_chat_api_client", true, {
+                        challenge: req.params.hub.challenge,
+                        token: registration_id, expire_after: token_duration
+                    });
+                }
+                else {
+                    jsonString = messageFormatter.FormatMessage(err, "Failed Register.", false, undefined);
+                }
+                res.end(jsonString);
+            }
+        });
+    } else {
+        jsonString = messageFormatter.FormatMessage(new Error("Invalid Request"), "register_chat_api_client.", false, undefined);
+        res.end(jsonString);
+    }
+};
+
+module.exports.long_term_token = function (req, res) {
+
+
+    var jsonString;
+    if (req.params["mode"] == 'subscribe' && req.params["verify_token"] == 'token' && req.params["token"]) {
+
+        redisClient.get(req.params["token"], function (err, obj) {
+            if (err) {
+                jsonString = messageFormatter.FormatMessage(err, "Failed to Register.", false, undefined);
+                res.end(jsonString);
+            } else {
+                if (obj) {
+                    var data = JSON.parse(obj);
+                    if(data.registration_id===req.params["token"]){
+                        var registration_id = create_session_id("register_long");
+                        var data = JSON.stringify({registration_id: registration_id, business_unit: data.business_unit});
+                        redisClient.set(registration_id, data, 'EX', long_term_token_duration, function (err, obj) {
+                            if (err) {
+                                jsonString = messageFormatter.FormatMessage(err, "Failed Register.", false, undefined);
+                                res.end(jsonString);
+                            } else {
+                                if (obj==="OK") {
+                                    jsonString = messageFormatter.FormatMessage(undefined, "Registered.", true, {
+                                        challenge: req.params["challenge"],
+                                        token: registration_id,
+                                        expire_after: long_term_token_duration
+                                    });
+                                    res.end(jsonString);
+                                } else {
+                                    jsonString = messageFormatter.FormatMessage(err, "Failed to Register.", false, undefined);
+                                    res.end(jsonString);
+                                }
+                            }
+                        });
+                    }else{
+                        jsonString = messageFormatter.FormatMessage(new Error("Invalid Token"), "register_chat_api_client.", false, undefined);
+                        res.end(jsonString);
+                    }
+                } else {
+                    jsonString = messageFormatter.FormatMessage(new Error("Invalid Request"), "register_chat_api_client.", false, undefined);
+                    res.end(jsonString);
+                }
+            }
+        });
+    } else {
+        jsonString = messageFormatter.FormatMessage(new Error("Invalid Request"), "register_chat_api_client.", false, undefined);
+        res.end(jsonString);
+    }
+
 };
 
 module.exports.initialize_chat = function (req, res) {
@@ -30,7 +133,7 @@ module.exports.initialize_chat = function (req, res) {
         var companyId = req.user.company;
         req.body.tenantId = tenantId;
         req.body.companyId = companyId;
-        req.body.api_session_id = create_session_id();
+        req.body.api_session_id = create_session_id("chat");
 
         var session_data = {
             communication_type: "http",
@@ -65,15 +168,24 @@ module.exports.initialize_chat = function (req, res) {
                             company: companyId,
                             jti: req.params.CustomerID,
                             attributes: req.body.Attributes,
-                            priority: req.body.priority,
+                            priority: req.body.Priority,
                             resourceCount: 1,
                             otherInfo: req.body.otherInfo,
-                            sessionId: req.body.api_session_id
+                            sessionId: req.body.api_session_id,
+                            businessUnit: req.body.BusinessUnit
                         };
 
                         ards.AddRequest(client_data, function (err, req_data) {
 
-                            var resource = JSON.parse(req_data);
+
+                            var resource = {};
+                            try {
+                                if(req_data)
+                                resource = JSON.parse(req_data);
+                            } catch (ex) {
+                                console.error(ex);
+                            }
+
                             if (resource && resource.ResourceInfo) {
                                 /*jsonString = messageFormatter.FormatMessage(resource, "processing request", true, client_data);
                                 res.end(jsonString);
@@ -82,7 +194,10 @@ module.exports.initialize_chat = function (req, res) {
                                 socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', session_data.client_data);
 
                             } else {
-                                jsonString = messageFormatter.FormatMessage(undefined, "processing request", false, {status: "no_agent_found"});
+                                jsonString = messageFormatter.FormatMessage(undefined, "processing request", false, {
+                                    status: "no_agent_found",
+                                    data: req_data
+                                });
                                 res.end(jsonString);
                             }
 
@@ -125,9 +240,17 @@ module.exports.initialize_chat = function (req, res) {
 
 };
 
-function remove_chat_session(session_id) {
+function remove_chat_session(tenant, company,session_id) {
     try {
+
         var jsonString;
+        ards.RemoveArdsRequest(tenant, company, session_id, 'NONE',function (err,res) {
+
+            jsonString = messageFormatter.FormatMessage(err, "end_chat - RemoveArdsRequest", true, res);
+            logger.info('remove_chat_session -RemoveArdsRequest - : %s ', jsonString);
+        });
+
+
         redisClient.hdel(bot_usr_redis_id, session_id, function (err, obj) {
             if (obj) {
                 jsonString = messageFormatter.FormatMessage(undefined, "end_chat", true, undefined);
@@ -145,6 +268,11 @@ function remove_chat_session(session_id) {
 
 module.exports.end_chat = function (req, res) {
     try {
+        if (!req.user || !req.user.tenant || !req.user.company)
+            throw new Error("invalid tenant or company.");
+        var tenantId = req.user.tenant;
+        var companyId = req.user.company;
+
         var jsonString;
         var agent_id = req.params.AgentID;
         var session_id = req.params.SessionID;
@@ -159,7 +287,7 @@ module.exports.end_chat = function (req, res) {
                     jsonString = messageFormatter.FormatMessage(new Error("Invalid Session ID"), "EXCEPTION", false, undefined);
                     logger.error('end_chat - Exception occurred : %s ', jsonString);
                 }
-                remove_chat_session(session_id);
+                remove_chat_session(tenantId,companyId,session_id);
             });
 
         } else {
@@ -170,6 +298,48 @@ module.exports.end_chat = function (req, res) {
     } catch (ex) {
         var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('end_chat - Exception occurred : %s ', jsonString);
+        res.end(jsonString);
+    }
+};
+
+module.exports.send_message_to_agent = function (req, res) {
+    try {
+        var jsonString;
+        var agent_id = req.params.AgentID;
+        var session_id = req.params.SessionID;
+        if (agent_id && session_id) {
+            redisClient.hget(bot_usr_redis_id, session_id, function (err, obj) {
+                if (obj) {
+                    var call_back_data = JSON.parse(obj);
+
+                    var data = {
+                        from: call_back_data.client_data.jti,
+                        display: call_back_data.client_data.name,
+                        time: Date.now(),
+                        to: agent_id,
+                        who: 'client',
+                        id: uuid.v1(),
+                        message: req.body.Message
+                    };
+
+                    socket_handler.send_message_agent(agent_id, 'message', data);
+                    jsonString = messageFormatter.FormatMessage(undefined, "send_message_to_agent", true, undefined);
+                    logger.info('send_message_to_agent - : %s ', jsonString);
+                } else {
+                    jsonString = messageFormatter.FormatMessage(new Error("Invalid Session ID"), "EXCEPTION", false, undefined);
+                    logger.error('send_message_to_agent - Exception occurred : %s ', jsonString);
+                }
+                res.end(jsonString);
+            });
+
+        } else {
+            jsonString = messageFormatter.FormatMessage(new Error("No Agent ID or Session ID"), "EXCEPTION", false, undefined);
+            logger.error('send_message_to_agent - Exception occurred : %s ', jsonString);
+        }
+        res.end(jsonString);
+    } catch (ex) {
+        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('send_message_to_agent - Exception occurred : %s ', jsonString);
         res.end(jsonString);
     }
 };
@@ -208,12 +378,12 @@ module.exports.message_back_to_client = function (req, res) {
         var jsonString;
         var resource = req.body;
         if (resource) {
-            redisClient.hget(bot_usr_redis_id, resource.sessionId, function (err, obj) {
+            redisClient.hget(bot_usr_redis_id, resource.body.sessionId, function (err, obj) {
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
-                    var postdata = Object.assign({}, call_back_data, resource);
-                    Common.http_post(call_back_data.call_back_url, postdata, call_back_data.tenant, call_back_data.company);
-                    jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client", true, postdata);
+                    resource.client_data = call_back_data.client_data;
+                    Common.http_post(call_back_data.call_back_url, resource, call_back_data.tenant, call_back_data.company);
+                    jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client", true, resource);
                 } else {
                     jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client - session expired", false, undefined);
                 }

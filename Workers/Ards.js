@@ -8,9 +8,13 @@ var config = require('config');
 var validator = require('validator');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 
+var call_back_url = config.Services.call_back_url;
+var call_back_url_version = config.Services.call_back_url_version;
+var call_back_url_port = config.Services.call_back_url_port;
 
-
-
+//var server_type = "IPMESSAGINGSERVER";
+var server_type = "ip_messaging_api";
+var server_id = "ip_messaging_api_server_01";
 //---------------------------- http methods----------------------------------------------
 var httpPost = function (companyInfo, serviceUrl, postData, callback) {
     var jsonStr = JSON.stringify(postData);
@@ -121,22 +125,23 @@ var httpDelete = function (companyInfo, serviceUrl, callback) {
 
 var RegisterChatArdsClient = function(){
 
-    var CallbackUrl = util.format("http://%s/DVP/API/%s/IPMessengerAPI/ARDS", config.Services.call_back_url, config.Services.call_back_url_version);
-    if (validator.isIP(config.Services.call_back_url)) {
-        CallbackUrl = util.format("http://%s:%s/DVP/API/%s/IPMessengerAPI/ARDS/requestserver", config.Services.call_back_url, config.Services.call_back_url_port, config.Services.call_back_url_version);
+    var CallbackUrl = util.format("http://%s/DVP/API/%s/IPMessengerAPI/ARDS", call_back_url, call_back_url_version);
+    if (validator.isIP(call_back_url)) {
+        CallbackUrl = util.format("http://%s:%s/DVP/API/%s/IPMessengerAPI/ARDS", call_back_url, call_back_url_port, call_back_url_version);
     }
 
     var QueuePositionCallbackUrl = CallbackUrl + "/QueuePosition";
 
     var reqBody = {
-        "ServerType":"IPMESSAGINGSERVER",
+        "ServerType":server_type,
         "RequestType":"CHAT",
         "CallbackUrl":CallbackUrl,
-        "CallbackOption":"",
+        "CallbackOption":"POST",
         "QueuePositionCallbackUrl":QueuePositionCallbackUrl,
         "ReceiveQueuePosition":true,
-        "ServerID":"CHATSERVER"
+        "ServerID":server_id
     };
+
 
     try {
         var ardsReqServerUrl = util.format("http://%s/DVP/API/%s/ARDS/requestserver", config.Services.ardsliteservice, config.Services.ardsliteversion);
@@ -202,16 +207,38 @@ var AddRequest = function (req_data, callback) {
     var priority = req_data.priority;
     var resourceCount = req_data.resourceCount;
     var otherInfo = req_data.otherInfo;
+    var businessUnit = req_data.businessUnit;
 
+
+   /* cJSON_AddNumberToObject(jdata, "Company", company);
+    cJSON_AddNumberToObject(jdata, "Tenant", tenant);
+    cJSON_AddStringToObject(jdata, "ServerType", "CALLSERVER");
+    cJSON_AddStringToObject(jdata, "CallbackOption", "GET");
+    cJSON_AddStringToObject(jdata, "RequestType", "CALL");
+    cJSON_AddStringToObject(jdata, "SessionId", uuid);
+    cJSON_AddStringToObject(jdata, "RequestServerId", globals.id);
+    cJSON_AddStringToObject(jdata, "Priority", priority);
+    cJSON_AddStringToObject(jdata, "OtherInfo", "");
+    cJSON_AddStringToObject(jdata, "BusinessUnit", bussinessunit);*/
+
+
+    var CallbackUrl = util.format("http://%s/DVP/API/%s/IPMessengerAPI/ARDS", call_back_url, call_back_url_version);
+    if (validator.isIP(call_back_url)) {
+        CallbackUrl = util.format("http://%s:%s/DVP/API/%s/IPMessengerAPI/ARDS", call_back_url, call_back_url_port, call_back_url_version);
+    }
     var reqBody = {
-        "ServerType": "IPMESSAGINGSERVER",
+        "Company":company,
+        "Tenant":tenant,
+        "ServerType": server_type,
         "RequestType": "CHAT",
+        "CallbackOption":"POST",
         "SessionId": sessionId,
         "Attributes": attributes,
-        "RequestServerId": "CHATSERVER",
+        "RequestServerId": server_id,
         "Priority": priority,
         "ResourceCount": resourceCount,
-        "OtherInfo": otherInfo
+        "OtherInfo": otherInfo,
+        "BusinessUnit":businessUnit
     };
 
 
@@ -227,7 +254,18 @@ var AddRequest = function (req_data, callback) {
                 callback(err, undefined);
             }else{
 
-                RemoveArdsRequest(tenant, company, sessionId, 'NONE', function(){
+                if(res1.statusCode === 200) {
+                    logger.info("DVP-IPMessagingAPI.PickResource:: Success");
+                    var response = JSON.parse(result);
+                    callback(undefined, response.Result);
+                }else{
+                    logger.info("DVP-IPMessagingAPI.PickResource:: Failed");
+                    callback(undefined, undefined);
+                }
+
+
+
+                /*RemoveArdsRequest(tenant, company, sessionId, 'NONE', function(){
                     if(res1.statusCode === 200) {
                         logger.info("DVP-IPMessagingAPI.PickResource:: Success");
                         var response = JSON.parse(result);
@@ -236,7 +274,7 @@ var AddRequest = function (req_data, callback) {
                         logger.info("DVP-IPMessagingAPI.PickResource:: Failed");
                         callback(undefined, undefined);
                     }
-                });
+                });*/
 
             }
         });
@@ -268,7 +306,7 @@ var UpdateResource = function(tenant, company, sessionId, resourceId, state, oth
 
 
                 var jsonObj = {
-                    ServerType: "IPMESSAGINGSERVER",
+                    ServerType: server_type,
                     RequestType: "CHAT",
                     State: state,
                     OtherInfo: otherInfo,
@@ -374,3 +412,4 @@ module.exports.RegisterChatArdsClient = RegisterChatArdsClient;
 module.exports.AddRequest = AddRequest;
 module.exports.UpdateResource = UpdateResource;
 module.exports.GetOngoingSessions = GetOngoingSessions;
+module.exports.RemoveArdsRequest = RemoveArdsRequest;
