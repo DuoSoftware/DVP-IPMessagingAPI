@@ -9,7 +9,7 @@ module.exports = {
         },
     "Redis":
         {
-            "mode":"sentinel",//instance, cluster, sentinel
+            "mode":"instance",//instance, cluster, sentinel
             "ip": "45.55.142.207",
             "port": 6389,
             "user": "duo",
@@ -29,7 +29,7 @@ module.exports = {
             "port": 6389,
             "user": "duo",
             "password": "DuoS123",
-            "mode":"sentinel",//instance, cluster, sentinel
+            "mode":"instance",//instance, cluster, sentinel
             "sentinels":{
                 "hosts": "138.197.90.92,45.55.205.92,138.197.90.92",
                 "port":16389,
@@ -52,7 +52,7 @@ module.exports = {
 
         },
     "Services": {
-        "call_back_url": "e080f9b0.ngrok.io",
+        "call_back_url": "ad6f1324.ngrok.io",
         "call_back_url_port": '3637',
         "call_back_url_version":"1.0.0.0",
 

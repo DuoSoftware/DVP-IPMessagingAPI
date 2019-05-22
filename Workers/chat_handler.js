@@ -9,8 +9,9 @@ var validator = require('validator');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var Common = require('./Common.js');
 var ards = require('./Ards.js');
-var socket_handler = require('./socket_connect_handler.js');
 var redis_handler = require('./redis_handler.js');
+var socket_handler = require('./socket_connect_handler.js');
+
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var uuid = require('node-uuid');
 var bot_usr_redis_id = config.Host.botclientusers;
@@ -22,7 +23,7 @@ var long_term_token_duration = parseInt(config.Host.longtermtokenduration);
 
 var create_session_id = function (prefix) {
     var reqId = uuid.v1();
-    return util.format("%s:%s", prefix,reqId);
+    return util.format("%s-%s", prefix,reqId);
 };
 
 var registred_clinet = function (data) {
@@ -347,22 +348,45 @@ module.exports.send_message_to_agent = function (req, res) {
 module.exports.agent_found = function (req, res) {
     try {
 
+
         var jsonString;
+        if (!req.user || !req.user.tenant || !req.user.company)
+            throw new Error("invalid tenant or company.");
+        var tenantId = req.user.tenant;
+        var companyId = req.user.company;
         var resource = req.body;
         if (resource && resource.ResourceInfo) {
-            redisClient.hget(bot_usr_redis_id, resource.SessionID, function (err, obj) {
-                if (obj) {
-                    socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(obj).client_data);
-                    jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
+            redisClient.hget(bot_usr_redis_id, resource.SessionID, function (err, sessiondata) {
+                if (sessiondata) {
+                    var key = "api-" + resource.SessionID;
+                    redisClient.get(key,function (err,obj) {
+                        if(obj){
+                            remove_chat_session(tenantId,companyId,resource.SessionID);
+                            jsonString = messageFormatter.FormatMessage(undefined, "agent_found - invalid request", false, undefined);
+                            logger.error('agent_found : %s ', jsonString);
+                        }else {
+                            redisClient.set(key,resource.ResourceInfo,function (err,obj) {
+                                if(err){
+                                    jsonString = messageFormatter.FormatMessage(undefined, "agent_found - fail to set assigned agent", false, undefined);
+                                    logger.error('agent_found : %s ', jsonString);
+                                }else {
+                                    socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(sessiondata).client_data);
+                                    jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
+                                    logger.info('agent_found : %s ', jsonString);
+                                }
+                            })
+                        }
+                    })
                 } else {
                     jsonString = messageFormatter.FormatMessage(undefined, "agent_found - session expired", false, undefined);
+                    remove_chat_session(tenantId,companyId,resource.SessionID);
+                    logger.error('agent_found : %s ', jsonString);
                 }
             });
         }
         else {
             jsonString = messageFormatter.FormatMessage(undefined, "agent_found - invalid call back data", false, undefined);
         }
-
         logger.info('agent_found : %s ', jsonString);
         res.end(jsonString);
     } catch (ex) {
@@ -382,7 +406,14 @@ module.exports.message_back_to_client = function (req, res) {
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
                     resource.client_data = call_back_data.client_data;
-                    Common.http_post(call_back_data.call_back_url, resource, call_back_data.tenant, call_back_data.company);
+                    Common.http_post(call_back_data.call_back_url, resource, call_back_data.tenant, call_back_data.company).then(function (response) {
+                        if(response&& response.status===false){
+                            remove_chat_session(call_back_data.tenant, call_back_data.company,resource.body.sessionId);
+                        }
+                    },function (error) {
+                        jsonString = messageFormatter.FormatMessage(error, "EXCEPTION", false, undefined);
+                        logger.error('message_back_to_client - http_post Exception occurred : %s ', jsonString);
+                    });
                     jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client", true, resource);
                 } else {
                     jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client - session expired", false, undefined);

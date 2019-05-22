@@ -118,6 +118,15 @@ pubclient.on("node error", function (err) {
     logger.error("Error ",  err);
 });
 
+
+subclient.on("connect", function () {
+    logger.info("Redis sub-client Connected ");
+});
+
+pubclient.on("connect", function () {
+    logger.info("Redis pub-client Connected ");
+});
+
 module.exports.redisClient = redisClient;
 module.exports.pubclient = pubclient;
 module.exports.subclient = subclient;

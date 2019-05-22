@@ -236,7 +236,7 @@ module.exports.send_message_agent = function (agent, eventName, message) {
             console.log("send_message_agent sent");
             return true;
         } else {
-            console.log("Fail to send message");
+            console.log("Fail to send message Agent : " +agent);
             return false;
         }
     });

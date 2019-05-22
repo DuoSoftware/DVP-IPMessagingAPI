@@ -7,6 +7,8 @@ var util = require('util');
 var config = require('config');
 var validator = require('validator');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+var redis_handler = require('./redis_handler.js');
+
 
 var call_back_url = config.Services.call_back_url;
 var call_back_url_version = config.Services.call_back_url_version;

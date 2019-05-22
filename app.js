@@ -4,7 +4,6 @@
 
 var restify = require('restify');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
-var redis_handler = require('./Workers/redis_handler.js');
 
 var config = require('config');
 
