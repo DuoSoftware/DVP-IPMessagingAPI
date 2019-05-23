@@ -337,21 +337,35 @@ module.exports.send_message_to_agent = function (req, res) {
                         message: req.body.Message
                     };
 
-                    socket_handler.send_message_agent(agent_id, 'message', data);
-                    jsonString = messageFormatter.FormatMessage(undefined, "send_message_to_agent", true, undefined);
-                    logger.info('send_message_to_agent - : %s ', jsonString);
+                    socket_handler.send_message_agent(agent_id, 'message', data).then(function (value) {
+                        if(value){
+                            jsonString = messageFormatter.FormatMessage(undefined, "send_message_to_agent", true, undefined);
+                            logger.info('send_message_to_agent - : %s ', jsonString);
+                        } else{
+                            jsonString = messageFormatter.FormatMessage(undefined, "send_message_to_agent - Fail to send message to Agent", false, undefined);
+                            logger.error('agent_found : %s ', jsonString);
+                        }
+                        res.end(jsonString);
+                    },function (reason) {
+                        //remove_request(tenantId,companyId,resource.SessionID, 'AgentRejected');
+                        jsonString = messageFormatter.FormatMessage(reason, "agent_found - Fail to send message to Agent", false, undefined);
+                        logger.error('agent_found : %s ', jsonString);
+                        res.end(jsonString);
+                    });
+
                 } else {
                     jsonString = messageFormatter.FormatMessage(new Error("Invalid Session ID"), "EXCEPTION", false, undefined);
                     logger.error('send_message_to_agent - Exception occurred : %s ', jsonString);
+                    res.end(jsonString);
                 }
-                res.end(jsonString);
             });
 
         } else {
             jsonString = messageFormatter.FormatMessage(new Error("No Agent ID or Session ID"), "EXCEPTION", false, undefined);
             logger.error('send_message_to_agent - Exception occurred : %s ', jsonString);
+            res.end(jsonString);
         }
-        res.end(jsonString);
+
     } catch (ex) {
         var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('send_message_to_agent - Exception occurred : %s ', jsonString);
