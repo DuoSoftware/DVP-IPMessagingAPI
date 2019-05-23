@@ -362,7 +362,7 @@ module.exports.send_message_to_agent = function (req, res) {
 module.exports.agent_found = function (req, res) {
     try {
 
-
+        console.log("------------------ Agent Found ---------------------");
         var jsonString;
         if (!req.user || !req.user.tenant || !req.user.company)
             throw new Error("invalid tenant or company.");
@@ -449,7 +449,7 @@ module.exports.message_back_to_client = function (req, res) {
                     resource.client_data = call_back_data.client_data;
                     Common.http_post(call_back_data.call_back_url, resource, call_back_data.tenant, call_back_data.company).then(function (response) {
                         if(response&& response.status===false){
-                            remove_chat_session(call_back_data.tenant, call_back_data.company,resource.body.sessionId, 'NONE');
+                            remove_chat_session(call_back_data.tenant, call_back_data.company,resource.body.sessionId, 'ClientRejected');
                         }
                     },function (error) {
                         jsonString = messageFormatter.FormatMessage(error, "EXCEPTION", false, undefined);

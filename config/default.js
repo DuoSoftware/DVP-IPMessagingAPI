@@ -51,7 +51,7 @@ module.exports = {
 
         },
     "Services": {
-        "call_back_url": "104.236.197.119",
+        "call_back_url": "e13c41c8.ngrok.io",
         "call_back_url_port": '3637',
         "call_back_url_version":"1.0.0.0",
 

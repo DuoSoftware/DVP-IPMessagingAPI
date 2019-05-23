@@ -217,7 +217,6 @@ io.sockets.on('connection', socketioJwt.authorize({
     });*/
 
 
-
     /*module.exports.send_message_agent = function (agent,profile,client_data) {
         client_data.profile = profile;
         socket.profile = profile;
@@ -228,18 +227,33 @@ io.sockets.on('connection', socketioJwt.authorize({
 
 module.exports.send_message_agent = function (agent, eventName, message) {
 
-    console.log("send_message_agent  " + "agent : " + agent + " eventName : " + eventName + " : " + JSON.stringify(message));
- return   io.sockets.adapter.clients([agent], function (err, clients) {
+    return new Promise(function (fulfill, reject) {
+        io.sockets.adapter.clients([agent], function (err, clients) {
+            logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
+            if (!err && (Array.isArray(clients) && clients.length > 0)) {
+                io.to(agent).emit(eventName, message);
+                console.log("send_message_agent sent");
+                fulfill(true)
+            } else {
+                console.log("Fail to send message Agent : " + agent);
+                reject(false);
+            }
+        });
+    });
+
+
+    /*console.log("send_message_agent  " + "agent : " + agent + " eventName : " + eventName + " : " + JSON.stringify(message));
+    io.sockets.adapter.clients([agent], function (err, clients) {
         logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
         if (!err && (Array.isArray(clients) && clients.length > 0)) {
             io.to(agent).emit(eventName, message);
             console.log("send_message_agent sent");
             return true;
         } else {
-            console.log("Fail to send message Agent : " +agent);
+            console.log("Fail to send message Agent : " + agent);
             return false;
         }
-    });
+    });*/
 };
 
 /*
