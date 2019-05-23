@@ -275,7 +275,7 @@ module.exports.initialize_chat = function (req, res) {
                             logger.info('initialize_chat AddRequest : %s ', req.body.api_session_id);
                             var resource = req_data;
                             try {
-                                if(req_data)
+                                if(req_data && typeof req_data == 'string')
                                     resource = JSON.parse(req_data);
                             } catch (ex) {
                                 console.error(ex);
