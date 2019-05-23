@@ -477,6 +477,7 @@ module.exports.message_back_to_client = function (req, res) {
                         logger.error('message_back_to_client - http_post Exception occurred : %s ', jsonString);
                         res.end(jsonString);
                     });
+                    console.log("---------------- " +resource.event_name +"---------------" );
                     if(resource.event_name==="sessionend"){
                         jsonString = messageFormatter.FormatMessage(undefined, "-------------******  Agent End Session ******----------------", true, resource);
                         logger.error('message_back_to_client -  : %s ', jsonString);
