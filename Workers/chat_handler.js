@@ -434,15 +434,14 @@ module.exports.agent_found = function (req, res) {
     try {
 
 
-        logger.info('agent_found  ------------------');
+        logger.info('------------------------------   agent_found  ------------------ -----------------------------');
         var jsonString;
         if (!req.user || !req.user.tenant || !req.user.company)
             throw new Error("invalid tenant or company.");
         var tenantId = req.user.tenant;
         var companyId = req.user.company;
         var resource = req.body;
-        logger.info('agent_found  : %s ', resource.SessionID);
-        if (resource && resource.ResourceInfo) {
+        if (resource && resource.ResourceInfo && resource.SessionID) {
             logger.info('agent_found  : %s ', resource.SessionID);
 
             init_and_inform_to_agent(resource, tenantId, companyId).then(function (jsonString) {
