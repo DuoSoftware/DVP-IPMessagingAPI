@@ -454,6 +454,10 @@ module.exports.agent_found = function (req, res) {
 module.exports.message_back_to_client = function (req, res) {
     try {
 
+        if (!req.user || !req.user.tenant || !req.user.company)
+            throw new Error("invalid tenant or company.");
+        var tenantId = req.user.tenant;
+        var companyId = req.user.company;
         var jsonString;
         var resource = req.body;
         if (resource) {
@@ -465,21 +469,34 @@ module.exports.message_back_to_client = function (req, res) {
                         if(response&& response.status===false){
                             remove_chat_session(call_back_data.tenant, call_back_data.company,resource.body.sessionId, 'ClientRejected');
                         }
+                        jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, response);
+                        logger.info('message_back_to_client - http_post : %s ', jsonString);
+                        res.end(jsonString);
                     },function (error) {
                         jsonString = messageFormatter.FormatMessage(error, "EXCEPTION", false, undefined);
                         logger.error('message_back_to_client - http_post Exception occurred : %s ', jsonString);
+                        res.end(jsonString);
                     });
-                    jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client", true, resource);
+                    if(resource.event_name==="sessionend"){
+                        jsonString = messageFormatter.FormatMessage(undefined, "-------------******  Agent End Session ******----------------", true, resource);
+                        logger.error('message_back_to_client -  : %s ', jsonString);
+                        remove_chat_session(tenantId, companyId,resource.body.sessionId, 'NONE');
+                    }
                 } else {
+
+                    remove_chat_session(tenantId, companyId,resource.body.sessionId, 'NoSession');
                     jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client - session expired", false, undefined);
+                    logger.info('message_back_to_client : %s ', jsonString);
+                    res.end(jsonString);
                 }
             });
         }
         else {
             jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client - invalid call back data", false, undefined);
+            logger.info('message_back_to_client : %s ', jsonString);
+            res.end(jsonString);
         }
-        logger.info('message_back_to_client : %s ', jsonString);
-        res.end(jsonString);
+
     } catch (ex) {
         var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('message_back_to_client - Exception occurred : %s ', jsonString);

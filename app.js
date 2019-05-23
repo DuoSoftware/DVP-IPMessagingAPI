@@ -72,6 +72,7 @@ RestServer.del('/DVP/API/' + version + '/IPMessengerAPI/Chat/Session/:SessionID/
     action: "write"
 }), chat_handler.end_chat);
 
+/*
 RestServer.put('/DVP/API/' + version + '/IPMessengerAPI/Chat', authorization({
     resource: "attribute",
     action: "write"
@@ -95,6 +96,7 @@ RestServer.get('/DVP/API/' + version + '/IPMessengerAPI/Chat', authorization({
 
     return next();
 });
+*/
 
 
 RestServer.post('/DVP/API/' + version + '/IPMessengerAPI/ARDS', authorization({
@@ -106,7 +108,8 @@ RestServer.post('/DVP/API/' + version + '/IPMessengerAPI/ARDS/QueuePosition', au
     resource: "attribute",
     action: "write"
 }), function (req, res, next) {
-console.info("QueuePosition-----------------------------");
+    console.info("------------------------------------------ ***  Queue Position Update  ****** -----------------------------");
+    chat_handler.message_back_to_client(req,res);
     return next();
 });
 
