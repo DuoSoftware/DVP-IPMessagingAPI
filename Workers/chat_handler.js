@@ -241,15 +241,29 @@ module.exports.initialize_chat = function (req, res) {
 
 };
 
-function remove_chat_session(tenant, company,session_id) {
+function remove_request(tenant, company, session_id,reason) {
     try {
-
         var jsonString;
-        ards.RemoveArdsRequest(tenant, company, session_id, 'NONE',function (err,res) {
+        ards.RemoveArdsRequest(tenant, company, session_id,reason,function (err,res) {
 
             jsonString = messageFormatter.FormatMessage(err, "end_chat - RemoveArdsRequest", true, res);
             logger.info('remove_chat_session -RemoveArdsRequest - : %s ', jsonString);
         });
+    }catch (ex){
+        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('remove_request - Exception occurred : %s ', jsonString);
+    }
+}
+function remove_chat_session(tenant, company,session_id,reason) {
+    try {
+
+        var jsonString;
+        remove_request(tenant, company, session_id,reason);
+        /*ards.RemoveArdsRequest(tenant, company, session_id,reason,function (err,res) {
+
+            jsonString = messageFormatter.FormatMessage(err, "end_chat - RemoveArdsRequest", true, res);
+            logger.info('remove_chat_session -RemoveArdsRequest - : %s ', jsonString);
+        });*/
 
 
         redisClient.hdel(bot_usr_redis_id, session_id, function (err, obj) {
@@ -288,7 +302,7 @@ module.exports.end_chat = function (req, res) {
                     jsonString = messageFormatter.FormatMessage(new Error("Invalid Session ID"), "EXCEPTION", false, undefined);
                     logger.error('end_chat - Exception occurred : %s ', jsonString);
                 }
-                remove_chat_session(tenantId,companyId,session_id);
+                remove_chat_session(tenantId,companyId,session_id, 'NONE');
             });
 
         } else {
@@ -361,25 +375,52 @@ module.exports.agent_found = function (req, res) {
                     var key = "api-" + resource.SessionID;
                     redisClient.get(key,function (err,obj) {
                         if(obj){
-                            remove_chat_session(tenantId,companyId,resource.SessionID);
+                            remove_request(tenantId,companyId,resource.SessionID, 'NoSession');
                             jsonString = messageFormatter.FormatMessage(undefined, "agent_found - invalid request", false, undefined);
                             logger.error('agent_found : %s ', jsonString);
                         }else {
-                            redisClient.set(key,resource.ResourceInfo,function (err,obj) {
+                            socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(sessiondata).client_data).then(function (value) {
+                                if(value){
+                                    jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
+                                    logger.info('agent_found : %s ', jsonString);
+                                } else{
+                                    remove_request(tenantId,companyId,resource.SessionID, 'AgentRejected');
+                                    jsonString = messageFormatter.FormatMessage(undefined, "agent_found - Fail to send message to Agent", false, resource);
+                                    logger.error('agent_found : %s ', jsonString);
+                                }
+                            },function (reason) {
+                                //remove_request(tenantId,companyId,resource.SessionID, 'AgentRejected');
+                                jsonString = messageFormatter.FormatMessage(reason, "agent_found - Fail to send message to Agent", false, resource);
+                                logger.error('agent_found : %s ', jsonString);
+                            });
+
+                            /*redisClient.set(key,resource.ResourceInfo,function (err,obj) {
                                 if(err){
                                     jsonString = messageFormatter.FormatMessage(undefined, "agent_found - fail to set assigned agent", false, undefined);
                                     logger.error('agent_found : %s ', jsonString);
                                 }else {
-                                    socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(sessiondata).client_data);
-                                    jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
-                                    logger.info('agent_found : %s ', jsonString);
+                                    socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(sessiondata).client_data).then(function (value) {
+                                       if(value){
+                                           jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
+                                           logger.info('agent_found : %s ', jsonString);
+                                       } else{
+                                           remove_chat_session(tenantId,companyId,resource.SessionID, 'AgentRejected');
+                                           jsonString = messageFormatter.FormatMessage(undefined, "agent_found - Fail to send message to Agent", false, resource);
+                                           logger.error('agent_found : %s ', jsonString);
+                                       }
+                                    },function (reason) {
+                                        remove_chat_session(tenantId,companyId,resource.SessionID, 'AgentRejected');
+                                        jsonString = messageFormatter.FormatMessage(reason, "agent_found - Fail to send message to Agent", false, resource);
+                                        logger.error('agent_found : %s ', jsonString);
+                                    });
+
                                 }
-                            })
+                            })*/
                         }
                     })
                 } else {
                     jsonString = messageFormatter.FormatMessage(undefined, "agent_found - session expired", false, undefined);
-                    remove_chat_session(tenantId,companyId,resource.SessionID);
+                    remove_chat_session(tenantId,companyId,resource.SessionID, 'NoSession');
                     logger.error('agent_found : %s ', jsonString);
                 }
             });
@@ -408,7 +449,7 @@ module.exports.message_back_to_client = function (req, res) {
                     resource.client_data = call_back_data.client_data;
                     Common.http_post(call_back_data.call_back_url, resource, call_back_data.tenant, call_back_data.company).then(function (response) {
                         if(response&& response.status===false){
-                            remove_chat_session(call_back_data.tenant, call_back_data.company,resource.body.sessionId);
+                            remove_chat_session(call_back_data.tenant, call_back_data.company,resource.body.sessionId, 'NONE');
                         }
                     },function (error) {
                         jsonString = messageFormatter.FormatMessage(error, "EXCEPTION", false, undefined);
