@@ -94,17 +94,19 @@ function remove_chat_session(tenant, company,session_id,reason) {
 }
 
 
-function init_and_inform_to_agent(resource, tenantId, companyId, jsonString) {
-    redisClient.hget(bot_usr_redis_id, resource.SessionID, function (err, sessiondata) {
+function init_and_inform_to_agent(resource, tenantId, companyId) {
+    var jsonString;
+  return  redisClient.hget(bot_usr_redis_id, resource.SessionID, function (err, sessiondata) {
         if (sessiondata) {
             var key = "api-" + resource.SessionID;
-            redisClient.get(key, function (err, obj) {
+          return  redisClient.get(key, function (err, obj) {
                 if (obj) {
                     remove_request(tenantId, companyId, resource.SessionID, 'NoSession');
                     jsonString = messageFormatter.FormatMessage(undefined, "agent_found - invalid request", false, undefined);
                     logger.error('agent_found : %s ', jsonString);
+                    return jsonString;
                 } else {
-                    socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(sessiondata).client_data).then(function (value) {
+                 return   socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(sessiondata).client_data).then(function (value) {
                         if (value) {
                             jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
                             logger.info('agent_found : %s ', jsonString);
@@ -113,43 +115,24 @@ function init_and_inform_to_agent(resource, tenantId, companyId, jsonString) {
                             jsonString = messageFormatter.FormatMessage(undefined, "agent_found - Fail to send message to Agent", false, resource);
                             logger.error('agent_found : %s ', jsonString);
                         }
+                     return jsonString;
                     }, function (reason) {
                         //remove_request(tenantId,companyId,resource.SessionID, 'AgentRejected');
                         jsonString = messageFormatter.FormatMessage(reason, "agent_found - Fail to send message to Agent", false, resource);
                         logger.error('agent_found : %s ', jsonString);
+                     return jsonString;
                     });
 
-                    /*redisClient.set(key,resource.ResourceInfo,function (err,obj) {
-                                if(err){
-                                    jsonString = messageFormatter.FormatMessage(undefined, "agent_found - fail to set assigned agent", false, undefined);
-                                    logger.error('agent_found : %s ', jsonString);
-                                }else {
-                                    socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(sessiondata).client_data).then(function (value) {
-                                       if(value){
-                                           jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
-                                           logger.info('agent_found : %s ', jsonString);
-                                       } else{
-                                           remove_chat_session(tenantId,companyId,resource.SessionID, 'AgentRejected');
-                                           jsonString = messageFormatter.FormatMessage(undefined, "agent_found - Fail to send message to Agent", false, resource);
-                                           logger.error('agent_found : %s ', jsonString);
-                                       }
-                                    },function (reason) {
-                                        remove_chat_session(tenantId,companyId,resource.SessionID, 'AgentRejected');
-                                        jsonString = messageFormatter.FormatMessage(reason, "agent_found - Fail to send message to Agent", false, resource);
-                                        logger.error('agent_found : %s ', jsonString);
-                                    });
-
-                                }
-                            })*/
                 }
             })
         } else {
             jsonString = messageFormatter.FormatMessage(undefined, "agent_found - session expired", false, undefined);
             remove_chat_session(tenantId, companyId, resource.SessionID, 'NoSession');
             logger.error('agent_found : %s ', jsonString);
+            return jsonString;
         }
     });
-    return jsonString;
+
 }
 
 
@@ -245,6 +228,7 @@ module.exports.initialize_chat = function (req, res) {
         req.body.companyId = companyId;
         req.body.api_session_id = create_session_id("chat");
 
+        logger.info('initialize_chat  : %s ', req.body.api_session_id);
         var session_data = {
             communication_type: "http",
             call_back_url: req.body.call_back_url, session_id: req.body.api_session_id,
@@ -266,13 +250,14 @@ module.exports.initialize_chat = function (req, res) {
                 res.end(jsonString);
             }
             else {
-
+                logger.info('initialize_chat Set Online Chat List  : %s ', req.body.api_session_id);
                 Common.CreateEngagement(req.body, function (error, engagement) {
                     if (error) {
                         jsonString = messageFormatter.FormatMessage(error, "Failed Create Engagement.", false, undefined);
                         res.end(jsonString);
                     }
                     else {
+                        logger.info('initialize_chat CreateEngagement  : %s ', req.body.api_session_id);
                         var client_data = {
                             tenant: tenantId,
                             company: companyId,
@@ -287,7 +272,7 @@ module.exports.initialize_chat = function (req, res) {
 
                         ards.AddRequest(client_data, function (err, req_data) {
 
-
+                            logger.info('initialize_chat AddRequest : %s ', req.body.api_session_id);
                             var resource = req_data;
                             try {
                                 if(req_data)
@@ -298,13 +283,19 @@ module.exports.initialize_chat = function (req, res) {
 
                             if (resource && resource.ResourceInfo) {
                                 //socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', session_data.client_data);
-                                jsonString =  init_and_inform_to_agent(resource, tenantId, companyId, jsonString);
-                                res.end(jsonString);
+                                init_and_inform_to_agent(resource, tenantId, companyId).then(function (jsonString) {
+                                    logger.info('agent_found -Direct routing  : %s ', jsonString);
+                                    res.end(jsonString);
+                                },function (reason) {
+                                    logger.error('no_agent_found -Direct routing  : %s ', reason);
+                                });
+
                             } else {
                                 jsonString = messageFormatter.FormatMessage(undefined, "processing request", false, {
                                     status: "no_agent_found",
                                     data: req_data
                                 });
+                                logger.info('initialize_chat AddRequest : %s ', jsonString);
                                 res.end(jsonString);
                             }
 
@@ -442,21 +433,31 @@ module.exports.send_message_to_agent = function (req, res) {
 module.exports.agent_found = function (req, res) {
     try {
 
-        console.log("------------------ Agent Found ---------------------");
+
+        logger.info('agent_found  ------------------');
         var jsonString;
         if (!req.user || !req.user.tenant || !req.user.company)
             throw new Error("invalid tenant or company.");
         var tenantId = req.user.tenant;
         var companyId = req.user.company;
         var resource = req.body;
+        logger.info('agent_found  : %s ', resource.SessionID);
         if (resource && resource.ResourceInfo) {
-            jsonString = init_and_inform_to_agent(resource, tenantId, companyId, jsonString);
+            logger.info('agent_found  : %s ', resource.SessionID);
+
+            init_and_inform_to_agent(resource, tenantId, companyId).then(function (jsonString) {
+                logger.info('agent_found -  : %s ', jsonString);
+                res.end(jsonString);
+            },function (reason) {
+                logger.error('no_agent_found -  : %s ', reason);
+            });
         }
         else {
             jsonString = messageFormatter.FormatMessage(undefined, "agent_found - invalid call back data", false, undefined);
+            logger.info('agent_found : %s ', jsonString);
+            res.end(jsonString);
         }
-        logger.info('agent_found : %s ', jsonString);
-        res.end(jsonString);
+
     } catch (ex) {
         var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('initialize_chat - Exception occurred : %s ', jsonString);
