@@ -179,7 +179,7 @@ module.exports.initialize_chat = function (req, res) {
                         ards.AddRequest(client_data, function (err, req_data) {
 
 
-                            var resource = {};
+                            var resource = req_data;
                             try {
                                 if(req_data)
                                 resource = JSON.parse(req_data);
@@ -265,14 +265,23 @@ function remove_chat_session(tenant, company,session_id,reason) {
             logger.info('remove_chat_session -RemoveArdsRequest - : %s ', jsonString);
         });*/
 
-
+        logger.info("Remove session from online list  -------------------------  : %s ",session_id);
         redisClient.hdel(bot_usr_redis_id, session_id, function (err, obj) {
             if (obj) {
-                jsonString = messageFormatter.FormatMessage(undefined, "end_chat", true, undefined);
-                logger.info('remove_chat_session - : %s ', jsonString);
+                logger.info("Remove session from online list - Done -------------------------  : %s ",session_id);
+
             } else {
-                jsonString = messageFormatter.FormatMessage(new Error("Invalid Session ID"), "EXCEPTION", false, undefined);
-                logger.error('remove_chat_session - Exception occurred : %s ', jsonString);
+                logger.error("Remove session from online list - Fails -------------------------  : %s ",session_id);
+            }
+        });
+
+        var key = "api-" + session_id;
+        logger.info("Remove session Information ------------------------- : %s ",key);
+        redisClient.del(key, function (err, obj) {
+            if (obj) {
+                logger.info("Remove session Information - Done ------------------------- : %s ",key);
+            } else {
+                logger.error("Remove session Information  - Fail------------------------- : %s ",key);
             }
         });
     } catch (ex) {
