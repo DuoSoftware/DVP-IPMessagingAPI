@@ -242,7 +242,22 @@ module.exports.http_post = function (serviceUrl,postData,tenant,company) {
         body: jsonStr
     };
 
-    return   request.post(options, function optionalCallback(err, httpResponse, body) {
+    return new Promise(function (fulfill, reject) {
+       request.post(options, function optionalCallback(err, httpResponse, body) {
+            if (err) {
+                console.log('upload failed:', err);
+                reject(null);
+            }
+            else if(httpResponse.statusCode === 200){
+                fulfill(body)
+            }
+            else {
+                reject(null);
+            }
+        });
+    });
+
+    /*return   request.post(options, function optionalCallback(err, httpResponse, body) {
         if (err) {
             console.log('upload failed:', err);
             return null;
@@ -253,7 +268,7 @@ module.exports.http_post = function (serviceUrl,postData,tenant,company) {
         else {
             return null;
         }
-    });
+    });*/
 
 };
 
