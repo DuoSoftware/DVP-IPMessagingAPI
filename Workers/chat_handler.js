@@ -106,7 +106,9 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
                     logger.error('agent_found : %s ', jsonString);
                     return jsonString;
                 } else {
-                 return   socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', JSON.parse(sessiondata).client_data).then(function (value) {
+                    var msg_data = JSON.parse(sessiondata).client_data;
+                    msg_data.Skills = resource.Skills;
+                 return   socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', msg_data).then(function (value) {
                         if (value) {
                             jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
                             logger.info('agent_found : %s ', jsonString);
