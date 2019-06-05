@@ -4,5 +4,5 @@ RUN git clone -b $VERSION_TAG https://github.com/DuoSoftware/DVP-IPMessagingAPI.
 RUN cd /usr/local/src/ipmessagingapi;
 WORKDIR /usr/local/src/ipmessagingapi
 RUN npm install
-EXPOSE 8878 8879
+EXPOSE 6689 6690
 CMD [ "node", "/usr/local/src/ipmessagingapi/app.js" ]
