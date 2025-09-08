@@ -47,7 +47,7 @@ module.exports = {
     {
         "vdomain": "LB_FRONTEND",
         "domain": "HOST_NAME",
-        "port": "VERTUAL_PORT",
+        "port": "VIRTUAL_PORT",
         "version": "HOST_VERSION",
 		"token": "HOST_TOKEN",
         "encryptedhex": "HOST_ENCRYPTEDHEX"
