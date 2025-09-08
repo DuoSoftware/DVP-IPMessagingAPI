@@ -7,7 +7,7 @@ var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJ
 
 var config = require('config');
 
-var port = config.Host.port || 3000;
+var port = config.Host.port || 3002;
 var version = config.Host.version;
 var socket_connect_handler = require('./Workers/socket_connect_handler');
 var ards = require('./Workers/Ards');
