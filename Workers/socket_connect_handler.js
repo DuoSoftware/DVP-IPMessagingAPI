@@ -27,7 +27,7 @@ var opt = {
 var socketio = require('socket.io', opt);
 var io
 module.exports.initialize_socket = function (rest_server) {
-    io = socketio.listen(rest_server.server);
+    io = socketio(rest_server.server);
     io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
 };
 
