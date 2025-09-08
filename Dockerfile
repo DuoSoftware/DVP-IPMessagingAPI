@@ -9,6 +9,7 @@
 # EXPOSE 8828
 # CMD [ "node", "/usr/local/src/ardsliteservice/app.js" ]
 
+
 FROM node:16-alpine
 WORKDIR /usr/local/src/ipmessagingapi
 COPY package*.json ./
