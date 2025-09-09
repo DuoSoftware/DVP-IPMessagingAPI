@@ -96,7 +96,12 @@ function remove_chat_session(tenant, company,session_id,reason) {
 
 function init_and_inform_to_agent(resource, tenantId, companyId) {
     var jsonString;
+    logger.info('init and inform to agent : %s ', resource.SessionID);
+    logger.info('bot_usr_redis_id', bot_usr_redis_id);
+
   return  redisClient.hget(bot_usr_redis_id, resource.SessionID, function (err, sessiondata) {
+    logger.info('sessiondata : %s ', sessiondata);
+    logger.info('error in init_and_inform_to_agent ', err);
         if (sessiondata) {
             var key = "api-" + resource.SessionID;
           return  redisClient.get(key, function (err, obj) {
@@ -136,9 +141,10 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
                 }
             })
         } else {
+            logger.info('No session found : %s ', resource.SessionID);
             jsonString = messageFormatter.FormatMessage(undefined, "agent_found - session expired", false, undefined);
             remove_chat_session(tenantId, companyId, resource.SessionID, 'NoSession');
-            logger.error('agent_found : %s ', jsonString);
+            logger.error('agent_found remove_chat_session: %s ', jsonString);
             return jsonString;
         }
     });
