@@ -452,7 +452,7 @@ module.exports.agent_found = function (req, res) {
         var companyId = req.user.company;
         var resource = req.body;
         if (resource && resource.ResourceInfo && resource.SessionID) {
-            logger.info('agent_found - : %s ', resource);
+            logger.info('resource : %s ', resource);
             logger.info('agent_found1  : %s ', resource.SessionID);
 
             init_and_inform_to_agent(resource, tenantId, companyId).then(function (jsonString) {
