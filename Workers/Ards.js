@@ -15,8 +15,8 @@ var call_back_url_version = config.Services.call_back_url_version;
 var call_back_url_port = config.Services.call_back_url_port;
 
 //var server_type = "IPMESSAGINGSERVER";
-var server_type = "ip_messaging_api";
-var server_id = "ip_messaging_api_server_01";
+var server_type = "IPMESSAGINGSERVER";
+var server_id = "CHATSERVER";
 //---------------------------- http methods----------------------------------------------
 var httpPost = function (companyInfo, serviceUrl, postData, callback) {
     var jsonStr = JSON.stringify(postData);
