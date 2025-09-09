@@ -100,15 +100,19 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
         if (sessiondata) {
             var key = "api-" + resource.SessionID;
           return  redisClient.get(key, function (err, obj) {
+            logger.info('------------------------------   init_and_inform_to_agent  ------------------ -----------------------------');
+            logger.info('init_and_inform_to_agent  : %s ', obj);
+            logger.info('key : %s ', key);
                 if (obj) {
                     remove_request(tenantId, companyId, resource.SessionID, 'NoSession');
                     jsonString = messageFormatter.FormatMessage(undefined, "agent_found - invalid request", false, undefined);
-                    logger.error('agent_found : %s ', jsonString);
+                    logger.info('agent_found : %s ', jsonString);
+                    logger.info("**** Agent Found and informed to agent ****",resource);
                     return jsonString;
                 } else {
                     var msg_data = JSON.parse(sessiondata).client_data;
                     msg_data.Skills = resource.Skills;
-                    console.log("**** Agent Found and informed to agent ****",resource);
+                  
                     
                  return   socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', msg_data).then(function (value) {
                         console.log("**** Agent Found and informed to agent ****",value);
