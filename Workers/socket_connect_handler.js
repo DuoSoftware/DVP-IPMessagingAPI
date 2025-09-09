@@ -12,7 +12,7 @@ var uuid = require('node-uuid');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
 var socketioJwt = require("socketio-jwt");
-var adapter = require('socket.io-redis');
+var adapter = require('@socket.io/redis-adapter');
 var redis = require('ioredis');
 var redis_handler = require('./redis_handler.js');
 
