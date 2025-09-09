@@ -294,11 +294,12 @@ module.exports.send_message_agent = function(agent, eventName, message) {
     return new Promise((fulfill, reject) => {
         console.log("agent:", agent);
 
-        // Use adapter.sockets() instead of adapter.clients() for newer Socket.IO versions
-        io.of("/").adapter.sockets(new Set([agent])).then((sockets) => {
-            console.log("sockets found:", sockets);
+        // adapter.clients expects a callback with (err, clients)
+        io.sockets.adapter.clients([agent], (err, clients) => {
+            console.log("clients:", clients);
+            console.log("err:", err);
 
-            if (sockets.size > 0) {
+            if (!err && clients && clients.length > 0) {
                 io.to(agent).emit(eventName, message);
                 console.log("send_message_agent sent");
                 fulfill(true);
@@ -306,12 +307,10 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 console.log("Fail to send message Agent:", agent);
                 reject(false);
             }
-        }).catch((err) => {
-            console.log("Error getting sockets for agent:", err);
-            reject(err);
         });
     });
 };
+
 
 
 /*
