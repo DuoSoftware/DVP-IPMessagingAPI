@@ -452,10 +452,11 @@ module.exports.agent_found = function (req, res) {
         var companyId = req.user.company;
         var resource = req.body;
         if (resource && resource.ResourceInfo && resource.SessionID) {
-            logger.info('agent_found  : %s ', resource.SessionID);
+            logger.info('agent_found - : %s ', resource);
+            logger.info('agent_found1  : %s ', resource.SessionID);
 
             init_and_inform_to_agent(resource, tenantId, companyId).then(function (jsonString) {
-                logger.info('agent_found -  : %s ', jsonString);
+                logger.info('agent_found 2-  : %s ', jsonString);
                 res.end(jsonString);
             },function (reason) {
                 logger.error('no_agent_found -  : %s ', reason);
@@ -463,7 +464,7 @@ module.exports.agent_found = function (req, res) {
         }
         else {
             jsonString = messageFormatter.FormatMessage(undefined, "agent_found - invalid call back data", false, undefined);
-            logger.info('agent_found : %s ', jsonString);
+            logger.info('agent_found3: %s ', jsonString);
             res.end(jsonString);
         }
 
