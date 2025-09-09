@@ -299,7 +299,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
 
         try {
             console.log("Sending message to agent:", agent);
-            io.to([agent]).emit(eventName, message);
+            io.to(agent).emit(eventName, message);
             console.log("send_message_agent sent successfully");
             fulfill(true);
         } catch (err) {
