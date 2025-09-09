@@ -233,7 +233,7 @@ module.exports.send_message_agent = function (agent, eventName, message) {
     return new Promise(function (fulfill, reject) {
         console.log("agent");
         console.log(agent);
-        console.log("sockets", sockets); 
+        console.log("sockets", io.sockets); 
         io.sockets.adapter.clients([agent], function (err, clients) {
         
         console.log("clients");
