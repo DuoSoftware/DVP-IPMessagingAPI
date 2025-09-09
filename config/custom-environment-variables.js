@@ -50,7 +50,8 @@ module.exports = {
         "port": "VIRTUAL_PORT",
         "version": "HOST_VERSION",
 		"token": "HOST_TOKEN",
-        "encryptedhex": "HOST_ENCRYPTEDHEX"
+        "encryptedhex": "HOST_ENCRYPTEDHEX",
+        "botclientusers":"IP_API_BOT_ONLINE_USERS"
     },
 
     "LBServer" : {
