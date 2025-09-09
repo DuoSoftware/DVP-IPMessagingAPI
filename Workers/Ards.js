@@ -17,6 +17,7 @@ var call_back_url_port = config.Services.call_back_url_port;
 //var server_type = "IPMESSAGINGSERVER";
 var server_type = "IPMESSAGINGSERVER";
 var server_id = "CHATSERVER";
+ 
 //---------------------------- http methods----------------------------------------------
 var httpPost = function (companyInfo, serviceUrl, postData, callback) {
     var jsonStr = JSON.stringify(postData);
@@ -240,12 +241,12 @@ var AddRequest = function (req_data, callback) {
         "RequestType": "CHAT",
         "CallbackOption":"POST",
         "SessionId": sessionId,
-        "Attributes": attributes,
+        "Attributes": ["22"],
         "RequestServerId": server_id,
-        "Priority": priority,
+        "Priority": 0,
         "ResourceCount": resourceCount,
         "OtherInfo": otherInfo,
-        "BusinessUnit":businessUnit
+        "BusinessUnit":"ftdev"
     };
 
     console.log("reqBody", reqBody);
