@@ -108,7 +108,11 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
                 } else {
                     var msg_data = JSON.parse(sessiondata).client_data;
                     msg_data.Skills = resource.Skills;
+                    console.log("**** Agent Found and informed to agent ****",resource);
+                    
                  return   socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', msg_data).then(function (value) {
+                        console.log("**** Agent Found and informed to agent ****",value);
+                        
                         if (value) {
                             jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
                             logger.info('agent_found : %s ', jsonString);
