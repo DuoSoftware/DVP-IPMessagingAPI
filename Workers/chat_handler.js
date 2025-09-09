@@ -285,7 +285,8 @@ module.exports.initialize_chat = function (req, res) {
                             sessionId: req.body.api_session_id,
                             businessUnit: req.body.BusinessUnit
                         };
-
+                        console.log("client_data", client_data);
+                        
                         ards.AddRequest(client_data, function (err, req_data) {
 
                             logger.info('initialize_chat AddRequest : %s ', req.body.api_session_id);
