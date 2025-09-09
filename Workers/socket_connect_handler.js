@@ -109,10 +109,35 @@ module.exports.initialize_socket = function (rest_server) {
     });
 };*/
  
-io.sockets.on('connection', socketioJwt.authorize({
-    secret: secret.Secret,
-    timeout: 15000 // 15 seconds to send the authentication message
-})).on('authenticated', function (socket) {
+// io.sockets.on('connection', socketioJwt.authorize({
+//     secret: secret.Secret,
+//     timeout: 15000 // 15 seconds to send the authentication message
+// }))
+io.sockets.on('connection', function(socket) {
+    try {
+        // Extract token from client handshake auth
+        const token = socket.handshake.auth?.token?.split(" ")[1]; // remove "Bearer "
+        console.log("socket.handshake.auth", socket.handshake.auth);
+        
+        if (!token) {
+            console.log("No token provided, disconnecting socket: " + socket.id);
+            return socket.disconnect();
+        }
+
+        // Verify JWT token
+        const decoded = jwt.verify(token, secret.Secret);
+        socket.decoded_token = decoded;
+
+        // Manually trigger 'authenticated' to mimic socketioJwt.authorize behavior
+        socket.emit('authenticated');
+        socket.authenticated = true;
+
+    } catch (err) {
+        console.log("JWT verification failed for socket: " + socket.id, err);
+        socket.disconnect();
+    }
+})
+.on('authenticated', function (socket) {
     console.log("Client connected: " + socket.id); // prints socket ID on connection
     console.log("JWT authenticated for clientID: " + socket.decoded_token.iss);
 
