@@ -30,7 +30,7 @@ module.exports.initialize_socket = function (rest_server) {
     io = socketio(rest_server.server);
     io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
 };
-console.log("");
+
 
 /*InitiateSubscriber = function (clientID, msgObj, callback) {
 
@@ -108,10 +108,7 @@ console.log("");
         }
     });
 };*/
-    console.log("JWT authorize object:", socketioJwt.authorize({
-        secret: secret.Secret,
-        timeout: 15000 // 15 seconds to send the authentication message
-    }));
+ 
 io.sockets.on('connection', socketioJwt.authorize({
     secret: secret.Secret,
     timeout: 15000 // 15 seconds to send the authentication message
@@ -236,9 +233,9 @@ module.exports.send_message_agent = function (agent, eventName, message) {
     return new Promise(function (fulfill, reject) {
         console.log("agent");
         console.log(agent);
-        
-        io.sockets.adapter.clients([agent], function (err, clients) {
         console.log("sockets", sockets); 
+        io.sockets.adapter.clients([agent], function (err, clients) {
+        
         console.log("clients");
         console.log(clients);
         console.log(err);
