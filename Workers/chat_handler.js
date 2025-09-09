@@ -236,10 +236,10 @@ module.exports.long_term_token = function (req, res) {
 
 module.exports.initialize_chat = function (req, res) {
     try {
-        if (!req.user || !req.user.tenant || !req.user.company)
+        if (!req.body || !req.body.tenant || !req.body.company)
             throw new Error("invalid tenant or company.");
-        var tenantId = req.user.tenant;
-        var companyId = req.user.company;
+        var tenantId = req.body.tenant;
+        var companyId = req.body.company;
         req.body.tenantId = tenantId;
         req.body.companyId = companyId;
         req.body.api_session_id = create_session_id("chat");
