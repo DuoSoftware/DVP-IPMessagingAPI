@@ -292,14 +292,14 @@ io.sockets.on('connection', function(socket) {
 // };
 module.exports.send_message_agent = function(agent, eventName, message) {
     return new Promise((fulfill, reject) => {
+           if (!agent || typeof agent !== "string") {
+            console.error("Invalid agent value:", agent);
+            return reject(false);
+        }
+
         try {
             console.log("Sending message to agent:", agent);
-            console.log("Message:", message);
-            console.log("Event Name:", eventName);
-            
-            // Emit directly to the agent room
-            io.to(agent).emit(eventName, message);
-
+            io.to([agent]).emit(eventName, message);
             console.log("send_message_agent sent successfully");
             fulfill(true);
         } catch (err) {
