@@ -292,22 +292,34 @@ io.sockets.on('connection', function(socket) {
 // };
 module.exports.send_message_agent = function(agent, eventName, message) {
     return new Promise((fulfill, reject) => {
-        console.log("agent:", agent);
+        try {
+            console.log("Sending message to agent:", agent);
+            console.log("Message:", message);
+            console.log("Event Name:", eventName);
+            
+            // Emit directly to the agent room
+            io.to(agent).emit(eventName, message);
 
+            console.log("send_message_agent sent successfully");
+            fulfill(true);
+        } catch (err) {
+            console.error("Error sending message to agent:", agent, err);
+            reject(false);
+        }
         // adapter.clients expects a callback with (err, clients)
-        io.sockets.adapter.clients([agent], (err, clients) => {
-            console.log("clients:", clients);
-            console.log("err:", err);
+        // io.sockets.adapter.clients([agent], (err, clients) => {
+        //     console.log("clients:", clients);
+        //     console.log("err:", err);
 
-            if (!err && clients && clients.length > 0) {
-                io.to(agent).emit(eventName, message);
-                console.log("send_message_agent sent");
-                fulfill(true);
-            } else {
-                console.log("Fail to send message Agent:", agent);
-                reject(false);
-            }
-        });
+        //     if (!err && clients && clients.length > 0) {
+        //         io.to(agent).emit(eventName, message);
+        //         console.log("send_message_agent sent");
+        //         fulfill(true);
+        //     } else {
+        //         console.log("Fail to send message Agent:", agent);
+        //         reject(false);
+        //     }
+        // });
     });
 };
 
