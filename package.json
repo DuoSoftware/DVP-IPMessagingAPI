@@ -28,8 +28,7 @@
     "restify": "^4.3.0",
     "restify-jwt": "^0.4.0",
     "socket.io": "^4.7.2",
-    "socket.io-ioredis": "^1.4.1",
-    "socket.io-redis": "^5.1.0",
+    "@socket.io/redis-adapter": "^8.2.1",
     "socketio-jwt": "^4.5.0",
     "validator": "^6.2.1"
   }
