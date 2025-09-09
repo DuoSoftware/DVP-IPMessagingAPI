@@ -211,6 +211,11 @@ var AddRequest = function (req_data, callback) {
     var otherInfo = req_data.otherInfo;
     var businessUnit = req_data.businessUnit;
 
+    console.log("req_data.company", req_data.company);
+    
+    console.log("company", company);
+    
+
 
    /* cJSON_AddNumberToObject(jdata, "Company", company);
     cJSON_AddNumberToObject(jdata, "Tenant", tenant);
@@ -243,7 +248,8 @@ var AddRequest = function (req_data, callback) {
         "BusinessUnit":businessUnit
     };
 
-
+    console.log("reqBody", reqBody);
+    
     try {
         var ardsReqServerUrl = util.format("http://%s/DVP/API/%s/ARDS/request", config.Services.ardsliteservice, config.Services.ardsliteversion);
         if (validator.isIP(config.Services.ardsliteservice)) {
