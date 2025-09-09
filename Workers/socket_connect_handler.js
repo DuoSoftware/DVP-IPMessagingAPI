@@ -228,7 +228,14 @@ io.sockets.on('connection', socketioJwt.authorize({
 module.exports.send_message_agent = function (agent, eventName, message) {
 
     return new Promise(function (fulfill, reject) {
+        console.log("agent");
+        console.log(agent);
+        
         io.sockets.adapter.clients([agent], function (err, clients) {
+        console.log("clients");
+        console.log(clients);
+        console.log(err);
+
             logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
             if (!err && (Array.isArray(clients) && clients.length > 0)) {
                 io.to(agent).emit(eventName, message);
