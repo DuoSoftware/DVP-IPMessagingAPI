@@ -253,43 +253,66 @@ io.sockets.on('connection', function(socket) {
     }*/
 });
 
-module.exports.send_message_agent = function (agent, eventName, message) {
+// module.exports.send_message_agent = function (agent, eventName, message) {
 
-    return new Promise(function (fulfill, reject) {
-        console.log("agent");
-        console.log(agent);
-        io.sockets.adapter.clients([agent], function (err, clients) {
+//     return new Promise(function (fulfill, reject) {
+//         console.log("agent");
+//         console.log(agent);
+//         io.sockets.adapter.clients([agent], function (err, clients) {
         
-        console.log("clients");
-        console.log(clients);
-        console.log(err);
+//         console.log("clients");
+//         console.log(clients);
+//         console.log(err);
 
-            logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
-            // if (!err && (Array.isArray(clients) && clients.length > 0)) {
+//             logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
+//             // if (!err && (Array.isArray(clients) && clients.length > 0)) {
+//                 io.to(agent).emit(eventName, message);
+//                 console.log("send_message_agent sent");
+//                 fulfill(true)
+//             // } else {
+//             //     console.log("Fail to send message Agent : " + agent);
+//             //     reject(false);
+//             // }
+//         });
+//     });
+
+
+//     /*console.log("send_message_agent  " + "agent : " + agent + " eventName : " + eventName + " : " + JSON.stringify(message));
+//     io.sockets.adapter.clients([agent], function (err, clients) {
+//         logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
+//         if (!err && (Array.isArray(clients) && clients.length > 0)) {
+//             io.to(agent).emit(eventName, message);
+//             console.log("send_message_agent sent");
+//             return true;
+//         } else {
+//             console.log("Fail to send message Agent : " + agent);
+//             return false;
+//         }
+//     });*/
+// };
+module.exports.send_message_agent = function(agent, eventName, message) {
+    return new Promise((fulfill, reject) => {
+        console.log("agent:", agent);
+
+        // Use adapter.sockets() instead of adapter.clients() for newer Socket.IO versions
+        io.of("/").adapter.sockets(new Set([agent])).then((sockets) => {
+            console.log("sockets found:", sockets);
+
+            if (sockets.size > 0) {
                 io.to(agent).emit(eventName, message);
                 console.log("send_message_agent sent");
-                fulfill(true)
-            // } else {
-            //     console.log("Fail to send message Agent : " + agent);
-            //     reject(false);
-            // }
+                fulfill(true);
+            } else {
+                console.log("Fail to send message Agent:", agent);
+                reject(false);
+            }
+        }).catch((err) => {
+            console.log("Error getting sockets for agent:", err);
+            reject(err);
         });
     });
-
-
-    /*console.log("send_message_agent  " + "agent : " + agent + " eventName : " + eventName + " : " + JSON.stringify(message));
-    io.sockets.adapter.clients([agent], function (err, clients) {
-        logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
-        if (!err && (Array.isArray(clients) && clients.length > 0)) {
-            io.to(agent).emit(eventName, message);
-            console.log("send_message_agent sent");
-            return true;
-        } else {
-            console.log("Fail to send message Agent : " + agent);
-            return false;
-        }
-    });*/
 };
+
 
 /*
 module.exports.send_message = function (clientID) {
