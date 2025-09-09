@@ -228,31 +228,17 @@ io.sockets.on('connection', socketioJwt.authorize({
 module.exports.send_message_agent = function (agent, eventName, message) {
 
     return new Promise(function (fulfill, reject) {
-            io.in(agent).allSockets().then((clients) => {
-            logger.info('io.in(agent).allSockets result :: clients :: ' + JSON.stringify(Array.from(clients)));
-            if (clients.size > 0) {
+        io.sockets.adapter.clients([agent], function (err, clients) {
+            logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
+            if (!err && (Array.isArray(clients) && clients.length > 0)) {
                 io.to(agent).emit(eventName, message);
                 console.log("send_message_agent sent");
-                fulfill(true);
+                fulfill(true)
             } else {
                 console.log("Fail to send message Agent : " + agent);
                 reject(false);
             }
-        }).catch((err) => {
-            logger.error('Error fetching clients: ' + err);
-            reject(false);
         });
-        // io.sockets.adapter.clients([agent], function (err, clients) {
-        //     logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
-        //     if (!err && (Array.isArray(clients) && clients.length > 0)) {
-        //         io.to(agent).emit(eventName, message);
-        //         console.log("send_message_agent sent");
-        //         fulfill(true)
-        //     } else {
-        //         console.log("Fail to send message Agent : " + agent);
-        //         reject(false);
-        //     }
-        // });
     });
 
 
