@@ -258,7 +258,6 @@ module.exports.send_message_agent = function (agent, eventName, message) {
     return new Promise(function (fulfill, reject) {
         console.log("agent");
         console.log(agent);
-        console.log("sockets", io.sockets); 
         io.sockets.adapter.clients([agent], function (err, clients) {
         
         console.log("clients");
@@ -266,14 +265,14 @@ module.exports.send_message_agent = function (agent, eventName, message) {
         console.log(err);
 
             logger.info('io.sockets.adapter.clients result :: clients :: ' + JSON.stringify(clients) + ' :: err :: ' + err);
-            if (!err && (Array.isArray(clients) && clients.length > 0)) {
+            // if (!err && (Array.isArray(clients) && clients.length > 0)) {
                 io.to(agent).emit(eventName, message);
                 console.log("send_message_agent sent");
                 fulfill(true)
-            } else {
-                console.log("Fail to send message Agent : " + agent);
-                reject(false);
-            }
+            // } else {
+            //     console.log("Fail to send message Agent : " + agent);
+            //     reject(false);
+            // }
         });
     });
 
