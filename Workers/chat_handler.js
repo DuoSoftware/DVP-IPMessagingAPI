@@ -290,6 +290,7 @@ module.exports.initialize_chat = function (req, res) {
                         ards.AddRequest(client_data, function (err, req_data) {
 
                             logger.info('initialize_chat AddRequest : %s ', req.body.api_session_id);
+                            logger.info('req_data : %s ', req_data);
                             var resource = req_data;
                             try {
                                 if(req_data && typeof req_data == 'string')
@@ -299,6 +300,7 @@ module.exports.initialize_chat = function (req, res) {
                             }
 
                             if (resource && resource.ResourceInfo) {
+
                                 //socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', session_data.client_data);
                                 init_and_inform_to_agent(resource, tenantId, companyId).then(function (jsonString) {
                                     logger.info('agent_found -Direct routing  : %s ', jsonString);
