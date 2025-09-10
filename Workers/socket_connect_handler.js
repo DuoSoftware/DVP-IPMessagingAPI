@@ -29,7 +29,7 @@ var io
 module.exports.initialize_socket = function (rest_server) {
     io = socketio(rest_server.server);
    // io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
-   io.adapter(createAdapter (redis_handler.pubclient, redis_handler.subClient));
+   io.adapter(createAdapter (redis_handler.pubclient, redis_handler.subclient));
 };
 
 
