@@ -12,7 +12,7 @@ var uuid = require('node-uuid');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
 var socketioJwt = require("socketio-jwt");
-var {createAdapter } = require('@socket.io/redis-adapter');
+var adapter = require('socket.io-redis');
 var redis = require('ioredis');
 var redis_handler = require('./redis_handler.js');
 
@@ -28,8 +28,8 @@ var socketio = require('socket.io', opt);
 var io
 module.exports.initialize_socket = function (rest_server) {
     io = socketio(rest_server.server);
-   // io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
-   io.adapter(createAdapter (redis_handler.pubclient, redis_handler.subclient));
+    io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
+
 };
 
 
