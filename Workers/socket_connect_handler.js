@@ -12,7 +12,7 @@ var uuid = require('node-uuid');
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
 var socketioJwt = require("socketio-jwt");
-var adapter = require('socket.io-redis');
+var {createAdapter } = require('@socket.io/redis-adapter');
 var redis = require('ioredis');
 var redis_handler = require('./redis_handler.js');
 
@@ -28,8 +28,8 @@ var socketio = require('socket.io', opt);
 var io
 module.exports.initialize_socket = function (rest_server) {
     io = socketio(rest_server.server);
-    io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
-
+   // io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
+   io.adapter(createAdapter (redis_handler.pubclient, redis_handler.subClient));
 };
 
 
@@ -292,6 +292,8 @@ io.sockets.on('connection', function(socket) {
 //     });*/
 // };
 module.exports.send_message_agent = function(agent, eventName, message) {
+    console.log("Event:", eventName);
+      console.log("Message payload:", message);
     return new Promise((fulfill, reject) => {
            if (!agent || typeof agent !== "string") {
             console.error("Invalid agent value:", agent);
@@ -300,6 +302,8 @@ module.exports.send_message_agent = function(agent, eventName, message) {
 
         try {
             console.log("Sending message to agent:", agent);
+            console.log("Event:", eventName);
+            console.log("Message payload:", message);
             io.to(agent).emit(eventName, message);
             console.log("send_message_agent sent successfully");
             fulfill(true);
