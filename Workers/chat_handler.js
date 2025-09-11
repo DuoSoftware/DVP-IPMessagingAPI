@@ -495,6 +495,7 @@ module.exports.message_back_to_client = function (req, res) {
         var jsonString;
         var resource = req.body;
         if (resource) {
+            logger.info('message_back_to_client - resource : %s ', JSON.stringify(resource));
             redisClient.hget(bot_usr_redis_id, resource.body.sessionId, function (err, obj) {
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
