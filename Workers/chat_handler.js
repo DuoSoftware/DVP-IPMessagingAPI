@@ -14,6 +14,7 @@ var socket_handler = require('./socket_connect_handler.js');
 
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var uuid = require('node-uuid');
+const { log } = require('console');
 var bot_usr_redis_id = config.Host.botclientusers;
 
 var redisClient = redis_handler.redisClient;
@@ -497,6 +498,8 @@ module.exports.message_back_to_client = function (req, res) {
         if (resource) {
             logger.info('message_back_to_client - resource : %s ', JSON.stringify(resource));
             redisClient.hget(bot_usr_redis_id, resource.body.sessionId, function (err, obj) {
+                logger.info('message_back_to_client - obj : %s ', obj);
+                logger.info('message_back_to_client - error : %s ', err);
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
                     resource.client_data = call_back_data.client_data;
