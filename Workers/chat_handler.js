@@ -252,10 +252,10 @@ module.exports.initialize_chat = function (req, res) {
             call_back_url: req.body.call_back_url, session_id: req.body.api_session_id,
             client_data: {
                 jti: req.params.CustomerID,
-                name: req.body.Name,
+                name: req.body.name,
                 company: companyId,
                 tenant: tenantId,
-                channel: req.body.Channel,
+                channel: req.body.channel,
                 profile: req.body.profile,
                 to: req.params.CustomerID,
                 sessionId: req.body.api_session_id
@@ -280,6 +280,7 @@ module.exports.initialize_chat = function (req, res) {
                             tenant: tenantId,
                             company: companyId,
                             jti: req.params.CustomerID,
+                            channel: req.body.channel,
                             attributes: req.body.Attributes,
                             priority: req.body.Priority,
                             resourceCount: 1,
