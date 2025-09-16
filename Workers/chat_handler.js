@@ -117,7 +117,8 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
                 } else {
                     var msg_data = JSON.parse(sessiondata).client_data;
                     msg_data.Skills = resource.Skills;
-                  
+                    msg_data.SessionID = resource.SessionID;
+                    console.log("msg_data", msg_data);
                     
                  return   socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', msg_data).then(function (value) {
                         console.log("**** Agent Found and informed to agent ****",value);
@@ -243,7 +244,8 @@ module.exports.initialize_chat = function (req, res) {
         req.body.tenantId = tenantId;
         req.body.companyId = companyId;
         req.body.api_session_id = create_session_id("chat");
-
+        console.log("req.body", req.body);
+        
         logger.info('initialize_chat  : %s ', req.body.api_session_id);
         var session_data = {
             communication_type: "http",
