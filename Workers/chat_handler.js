@@ -258,7 +258,9 @@ module.exports.initialize_chat = function (req, res) {
                 channel: req.body.channel,
                 profile: req.body.profile,
                 to: req.params.CustomerID,
-                sessionId: req.body.api_session_id
+                sessionId: req.body.api_session_id,
+                attributes: req.body.attributes,
+                priority: req.body.priority
             }
         };
 
@@ -281,12 +283,12 @@ module.exports.initialize_chat = function (req, res) {
                             company: companyId,
                             jti: req.params.CustomerID,
                             channel: req.body.channel,
-                            attributes: req.body.Attributes,
-                            priority: req.body.Priority,
+                            attributes: req.body.attributes,
+                            priority: req.body.priority,
                             resourceCount: 1,
                             otherInfo: req.body.otherInfo,
                             sessionId: req.body.api_session_id,
-                            businessUnit: req.body.BusinessUnit
+                            businessUnit: req.body.aud
                         };
                         console.log("client_data", client_data);
                         
