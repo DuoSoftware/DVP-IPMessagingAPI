@@ -211,10 +211,6 @@ var AddRequest = function (req_data, callback) {
     var resourceCount = req_data.resourceCount;
     var otherInfo = req_data.otherInfo;
     var businessUnit = req_data.businessUnit;
-
-    console.log("req_data.company", req_data.company);
-    
-    console.log("company", company);
     
 
 
@@ -249,7 +245,6 @@ var AddRequest = function (req_data, callback) {
         "BusinessUnit":"ftdev"
     };
 
-    console.log("reqBody", reqBody);
     
     try {
         var ardsReqServerUrl = util.format("http://%s/DVP/API/%s/ARDS/request", config.Services.ardsliteservice, config.Services.ardsliteversion);
