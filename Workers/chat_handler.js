@@ -67,7 +67,9 @@ function remove_chat_session(tenant, company,session_id,reason) {
             jsonString = messageFormatter.FormatMessage(err, "end_chat - RemoveArdsRequest", true, res);
             logger.info('remove_chat_session -RemoveArdsRequest - : %s ', jsonString);
         });*/
-
+        if (!session_id.startsWith("chat-")) {
+            session_id = "chat-" + session_id;
+        }
         logger.info("Remove session from online list  -------------------------  : %s ",session_id);
         redisClient.hdel(bot_usr_redis_id, session_id, function (err, obj) {
             if (obj) {
