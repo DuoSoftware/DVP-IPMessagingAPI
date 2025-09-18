@@ -58,6 +58,13 @@ function remove_request(tenant, company, session_id,reason) {
     }
 }
 function remove_chat_session(tenant, company,session_id,reason) {
+
+    console.log("remove_chat_session", session_id);
+    console.log("tenant - : %s ", tenant);
+    console.log("company - : %s ", company);
+    console.log("reason - : %s ", reason);
+    
+    
     try {
 
         var jsonString;
