@@ -7,7 +7,7 @@ var io = require('socket.io')(port);
 var httpReq = require('request');
 var util = require('util');
 var uuid = require('node-uuid');
-
+var PersonalMessage = require("dvp-mongomodels/model/Room").PersonalMessage;
 
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
@@ -291,6 +291,43 @@ io.sockets.on('connection', function(socket) {
 //         }
 //     });*/
 // };
+// module.exports.send_message_agent = function(agent, eventName, message) {
+//     console.log("Event:", eventName);
+//       console.log("Message payload:", message);
+//     return new Promise((fulfill, reject) => {
+//            if (!agent || typeof agent !== "string") {
+//             console.error("Invalid agent value:", agent);
+//             return reject(false);
+//         }
+
+//         try {
+//             console.log("Sending message to agent:", agent);
+//             console.log("Event:", eventName);
+//             console.log("Message payload:", message);
+//             io.to(agent).emit(eventName, message);
+//             console.log("send_message_agent sent successfully");
+//             fulfill(true);
+//         } catch (err) {
+//             console.error("Error sending message to agent:", agent, err);
+//             reject(false);
+//         }
+//         // adapter.clients expects a callback with (err, clients)
+//         // io.sockets.adapter.clients([agent], (err, clients) => {
+//         //     console.log("clients:", clients);
+//         //     console.log("err:", err);
+
+//         //     if (!err && clients && clients.length > 0) {
+//         //         io.to(agent).emit(eventName, message);
+//         //         console.log("send_message_agent sent");
+//         //         fulfill(true);
+//         //     } else {
+//         //         console.log("Fail to send message Agent:", agent);
+//         //         reject(false);
+//         //     }
+//         // });
+//     });
+// };
+
 module.exports.send_message_agent = function(agent, eventName, message) {
     console.log("Event:", eventName);
       console.log("Message payload:", message);
@@ -301,10 +338,58 @@ module.exports.send_message_agent = function(agent, eventName, message) {
         }
 
         try {
+            console.log("message.from", message.from);
+            console.log("message.to", message.to);
+            
+            var from = message.from;
+            var to = message.to;
+          //var id = data.uuid;
+
+          var query = {
+            $or: [
+              { from: from, to: to },
+              { from: to, to: from },
+            ],
+          };
+          console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
+          
+
+          if (message.who && message.who === "client") {
+            query = {
+              $or: [{ from: from }, { to: from }],
+            };
+          }
+          console.log("Mongo query being used:", JSON.stringify(query, null, 2));
             console.log("Sending message to agent:", agent);
             console.log("Event:", eventName);
             console.log("Message payload:", message);
             io.to(agent).emit(eventName, message);
+            console.log("Message emitted to agent:", agent);
+            
+            PersonalMessage.find(query)
+            .lean()
+            .sort({ created_at: -1 })
+            .limit(100)
+            .exec(function (err, latestmessages) {
+                console.log("Mongo query:", JSON.stringify(query, null, 2));
+              if (latestmessages && Array.isArray(latestmessages)) {
+                latestmessages = Common.DecryptMessages(latestmessages);
+                console.log("Raw messages from Mongo:", latestmessages);
+                io.to(agent).emit("latestmessages", {
+                  from: message.from,
+                  messages: latestmessages.reverse(),
+                });
+                console.log("Decrypted messages:", latestmessages);
+                //io.to(socket.decoded_token.iss).emit("latestmessages", latestmessages.reverse());
+              } else {
+                logger.error("No new message found");
+                io.emit("connectionerror", {
+                  action: "latestmessages",
+                  data: data,
+                  message: "no data found",
+                });
+              }
+            });
             console.log("send_message_agent sent successfully");
             fulfill(true);
         } catch (err) {
@@ -327,8 +412,6 @@ module.exports.send_message_agent = function(agent, eventName, message) {
         // });
     });
 };
-
-
 
 /*
 module.exports.send_message = function (clientID) {
