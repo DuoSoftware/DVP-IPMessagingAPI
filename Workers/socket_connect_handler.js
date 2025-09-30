@@ -8,7 +8,6 @@ var httpReq = require('request');
 var util = require('util');
 var uuid = require('node-uuid');
 var PersonalMessage = require("dvp-mongomodels/model/Room").PersonalMessage;
-
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
 var socketioJwt = require("socketio-jwt");
@@ -359,13 +358,19 @@ module.exports.send_message_agent = function(agent, eventName, message) {
               $or: [{ from: from }, { to: from }],
             };
           }
-          console.log("Mongo query being used:", JSON.stringify(query, null, 2));
+            console.log("Mongo query being used:", JSON.stringify(query, null, 2));
             console.log("Sending message to agent:", agent);
             console.log("Event:", eventName);
             console.log("Message payload:", message);
             io.to(agent).emit(eventName, message);
             console.log("Message emitted to agent:", agent);
-            
+            const mongoose = require("mongoose");
+
+            if (mongoose.connection.readyState === 1) {
+            console.log("MongoDB is connected. You can run queries.");
+            } else {
+            console.log("MongoDB is NOT connected. readyState =", mongoose.connection.readyState);
+            }
             PersonalMessage.find(query)
             .lean()
             .sort({ created_at: -1 })
