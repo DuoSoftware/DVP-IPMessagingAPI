@@ -384,7 +384,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     .sort({ created_at: -1 })
                     .limit(5)
                     .then(latestmessages => {
-                        console.log("Mongo query:", JSON.stringify(query, null, 2));
+                        console.log("Mongo latestmessages:", latestmessages);
                          if (latestmessages && Array.isArray(latestmessages)) {
                             latestmessages = Common.DecryptMessages(latestmessages);
                             console.log("Raw messages from Mongo:", latestmessages);
