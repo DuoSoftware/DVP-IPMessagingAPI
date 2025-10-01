@@ -228,6 +228,8 @@ module.exports.CreateEngagement = function (payload, cb) {
 module.exports.DecryptMessages = function (messages) {
     try {
         return messages.map(function (item) {
+            console.log("Decrypting message item:", item);
+            
             if (item.data && typeof item.data === 'string') {
                 item.data = crypto_handler.Decrypt(item.data);
             } else {
