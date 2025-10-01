@@ -422,18 +422,15 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
                 PersonalMessage.find(query)
                     .lean()
-                    .sort({ createdAt: -1 })
-                    .limit(50)
+                    .sort({ created_at: -1 })
+                    .limit(5)
                     .then(latestmessages => {
-                        //console.log("Mongo latestmessages:", latestmessages);
+                        console.log("Mongo latestmessages:", latestmessages);
                          if (latestmessages && Array.isArray(latestmessages)) {
                             // latestmessages = Common.DecryptMessages(latestmessages);
                             // console.log("Raw messages from Mongo:", latestmessages);
-                            console.log("Emitting latestmessages to agent:", {
-                                from: message.from,
-                                messages: latestmessages.reverse(),
-                            });
-
+                          
+                            
                             io.emit("latestmessages", {
                             from: message.from,
                             messages: latestmessages.reverse(),
