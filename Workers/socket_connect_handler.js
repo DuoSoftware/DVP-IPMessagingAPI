@@ -383,14 +383,26 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     .lean()
                     .sort({ created_at: -1 })
                     .limit(5)
-                    .then(messages => {
-                        if (messages.length > 0) {
-                            console.log("✅ Fetched messages:", messages.length);
-                            console.log("Sample message:", messages[0]);
+                    .then(latestmessages => {
+                        console.log("Mongo query:", JSON.stringify(query, null, 2));
+                         if (latestmessages && Array.isArray(latestmessages)) {
+                            latestmessages = Common.DecryptMessages(latestmessages);
+                            console.log("Raw messages from Mongo:", latestmessages);
+                            io.to(agent).emit("latestmessages", {
+                            from: message.from,
+                            messages: latestmessages.reverse(),
+                           });
+                          console.log("Decrypted messages:", latestmessages);
+               
                         } else {
-                            console.log("⚠️ No messages found.");
-                        }
-                        process.exit(0);
+                            logger.error("No new message found");
+                            io.emit("connectionerror", {
+                            action: "latestmessages",
+                            data: data,
+                            message: "no data found",
+                            });
+                        }// exit after test
+                       
                     })
                     .catch(err => {
                         console.error("❌ Query error:", err);
