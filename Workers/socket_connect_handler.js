@@ -11,6 +11,7 @@ var PersonalMessage = require("dvp-mongomodels/model/Room").PersonalMessage;
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
 var socketioJwt = require("socketio-jwt");
+var Common = require("./Common.js");
 var {createAdapter } = require('@socket.io/redis-adapter');
 var redis = require('ioredis');
 var redis_handler = require('./redis_handler.js');
@@ -371,13 +372,26 @@ module.exports.send_message_agent = function(agent, eventName, message) {
 
                 const query = { $or: [] };
 
-                if (from && to) {
-                    query.$or.push({ from, to }, { from: to, to: from });
-                } else if (from) {
-                    query.$or.push({ from });
-                } else if (to) {
-                    query.$or.push({ to });
+                // Custom case: if message.who === "client"
+                if (message?.who && message.who === "client") {
+                    query.$or.push({ from: from }, { to: from });
+                } else {
+                    // Normal case
+                    if (from && to) {
+                        query.$or.push({ from, to }, { from: to, to: from });
+                    } else if (from) {
+                        query.$or.push({ from });
+                    } else if (to) {
+                        query.$or.push({ to });
+                    }
                 }
+                // if (from && to) {
+                //     query.$or.push({ from, to }, { from: to, to: from });
+                // } else if (from) {
+                //     query.$or.push({ from });
+                // } else if (to) {
+                //     query.$or.push({ to });
+                // }
                console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
                 PersonalMessage.find(query)
                     .lean()
