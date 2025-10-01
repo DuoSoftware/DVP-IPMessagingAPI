@@ -20,7 +20,7 @@
     "aes-js": "^3.1.2",
     "config": "^1.24.0",
     "dvp-common": "^1.5.2",
-    "dvp-mongomodels": "^5.2.22",
+    "dvp-mongomodels": "^6.4.23",
     "ioredis": "^5.3.2",
     "node-uuid": "^1.4.7",
     "mongoose": "^5.9.3",

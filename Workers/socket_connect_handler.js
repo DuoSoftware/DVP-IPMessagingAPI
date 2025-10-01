@@ -359,34 +359,41 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             }).then(() => {
                 console.log("✅ MongoDB connected!");
             
-                  var from = message.from;
-                  var to = message.to;
+                //   var from = message.from;
+                //   var to = message.to;
           //var id = data.uuid;
                // Debug: check if model is valid
                 console.log("Is PersonalMessage defined?", !!PersonalMessage);
                 console.log("Model name:", PersonalMessage?.modelName);
                 console.log("Collection name:", PersonalMessage?.collection?.name);
-                var query = {
-                    $or: [
-                    { from: from, to: to },
-                    { from: to, to: from },
-                    ],
-                };
+                var from = message?.from;
+                var to = message?.to;
+
+                const query = { $or: [] };
+
+                if (from && to) {
+                    query.$or.push({ from, to }, { from: to, to: from });
+                } else if (from) {
+                    query.$or.push({ from });
+                } else if (to) {
+                    query.$or.push({ to });
+                }
                console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
                 PersonalMessage.find(query)
                     .lean()
                     .sort({ created_at: -1 })
                     .limit(5)
-                    .exec((err, messages) => {
-                        if (err) {
-                            console.error("MongoDB query error:", err);
-                        } else if (messages && messages.length > 0) {
-                            console.log("✅ PersonalMessage.find works! Fetched messages:", messages.length);
+                    .then(messages => {
+                        if (messages.length > 0) {
+                            console.log("✅ Fetched messages:", messages.length);
                             console.log("Sample message:", messages[0]);
                         } else {
-                            console.log("⚠️ PersonalMessage.find returned no messages.");
+                            console.log("⚠️ No messages found.");
                         }
-                        process.exit(0); // exit after test
+                        process.exit(0);
+                    })
+                    .catch(err => {
+                        console.error("❌ Query error:", err);
                     });
                     // .exec((err, latestmessages) => {
                     //     console.log("Mongo query:", JSON.stringify(query, null, 2));
