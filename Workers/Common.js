@@ -10,7 +10,7 @@ var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var token = util.format("Bearer %s", config.Host.token);
 var uuid = require('node-uuid');
 var redis = require('ioredis');
-
+var crypto_handler = require("./crypto_handler.js");
 var redisip = config.Security.ip;
 var redisport = config.Security.port;
 var redispass = config.Security.password;
