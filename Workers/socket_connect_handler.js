@@ -352,7 +352,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             const mongoose = require("mongoose");
 
             const mongoURI = "mongodb://duo:DuoS123@172.16.25.32:27017/facetone"; // your DB URI
-            
+            mongoose.Promise = global.Promise;
             mongoose.connect(mongoURI, {
                 useNewUrlParser: true,
                 useUnifiedTopology: true
