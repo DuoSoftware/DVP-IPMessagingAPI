@@ -14,7 +14,7 @@ var socketioJwt = require("socketio-jwt");
 var {createAdapter } = require('@socket.io/redis-adapter');
 var redis = require('ioredis');
 var redis_handler = require('./redis_handler.js');
-const mongoose = require("mongoose");
+
 var opt = {
     pingTimeout: 60000,
     pingInterval: 25000,
@@ -364,7 +364,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             console.log("Message payload:", message);
             io.to(agent).emit(eventName, message);
             console.log("Message emitted to agent:", agent);
-            
+            const mongoose = require("mongoose");
 
             if (mongoose.connection.readyState === 1) {
             console.log("MongoDB is connected. You can run queries.");
