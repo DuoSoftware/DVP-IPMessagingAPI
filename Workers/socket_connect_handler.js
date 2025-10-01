@@ -359,7 +359,42 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 useUnifiedTopology: true
             }).then(() => {
                 console.log("✅ MongoDB connected!");
-            
+                 const personalMessage = new PersonalMessage({
+                    type: message.type || "text",  // Default type is text
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    status: "pending",  // Assuming all messages are pending when created
+                    uuid: message.uuid,  // UUID to uniquely identify the message
+                    message: message.data || message.message,  // The actual message content
+                    data: message.data || message.message,  // The data field (if any)
+                    channel: message.channel || "default",  // Default channel if not provided
+                    wa_id: message.wa_id,  // WhatsApp ID (from message)
+                    session: message.session,  // Session ID (from message)
+                    from: message.from,  // Sender's identifier
+                    to: message.to,  // Recipient's identifier
+                    direction: "outbound",  // Message direction (outbound in this case)
+                    agentId: message.agentId,  // Agent ID (who is sending the message)
+                    agentName: message.agentName || message.from,  // Agent name, default to from if missing
+                    jti: message.jti || "",  // JWT token ID (if any)
+                    externalUserId: message.externalUserId || "",  // External user ID (if any)
+                    company: message.company,  // Company ID
+                    tenant: message.tenant,  // Tenant ID
+                    BusinessUnit: message.BusinessUnit || "default",  // Business unit
+                });
+                console.log("PersonalMessage instance created:", personalMessage);
+                
+                // Save the PersonalMessage to MongoDB
+                personalMessage.save()
+                    .then(() => {
+                        console.log("Message saved successfully to MongoDB");
+
+                        // Once the message is saved, resolve the promise
+                        fulfill(true);
+                    })
+                    .catch((err) => {
+                        console.error("Error saving message to MongoDB:", err);
+                        reject(false);
+                    });
                 //   var from = message.from;
                 //   var to = message.to;
           //var id = data.uuid;
