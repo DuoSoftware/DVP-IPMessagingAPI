@@ -15,7 +15,7 @@ var Common = require("./Common.js");
 var {createAdapter } = require('@socket.io/redis-adapter');
 var redis = require('ioredis');
 var redis_handler = require('./redis_handler.js');
-var { uuid } = require ("uuid");
+const { v4: uuidv4 } = require("uuid"); 
 var opt = {
     pingTimeout: 60000,
     pingInterval: 25000,
@@ -351,7 +351,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             io.to(agent).emit(eventName, message);
             console.log("Message emitted to agent:", agent);
             const mongoose = require("mongoose");
-            let id = uuid();
+            let id = uuidv4();
             const mongoURI = "mongodb://duo:DuoS123@172.16.25.32:27017/facetone"; // your DB URI
             mongoose.Promise = global.Promise;
             mongoose.connect(mongoURI, {
