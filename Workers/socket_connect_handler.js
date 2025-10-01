@@ -420,13 +420,6 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                         query.$or.push({ to });
                     }
                 }
-                if (from && to) {
-                    query.$or.push({ from, to }, { from: to, to: from });
-                } else if (from) {
-                    query.$or.push({ from });
-                } else if (to) {
-                    query.$or.push({ to });
-                }
                console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
                 PersonalMessage.find(query)
                     .lean()
