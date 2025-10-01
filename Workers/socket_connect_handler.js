@@ -396,7 +396,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 PersonalMessage.find(query)
                     .lean()
                     .sort({ created_at: -1 })
-                    .limit(5)
+                    .limit(50)
                     .then(latestmessages => {
                         console.log("Mongo latestmessages:", latestmessages);
                          if (latestmessages && Array.isArray(latestmessages)) {
