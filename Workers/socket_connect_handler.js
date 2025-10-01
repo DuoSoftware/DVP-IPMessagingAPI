@@ -427,7 +427,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     .then(latestmessages => {
                         console.log("Mongo latestmessages:", latestmessages);
                          if (latestmessages && Array.isArray(latestmessages)) {
-                            latestmessages = Common.DecryptMessages(latestmessages);
+                            // latestmessages = Common.DecryptMessages(latestmessages);
                             // console.log("Raw messages from Mongo:", latestmessages);
                             io.to(agent).emit("latestmessages", {
                             from: message.from,
