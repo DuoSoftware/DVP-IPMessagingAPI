@@ -422,7 +422,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
                 PersonalMessage.find(query)
                     .lean()
-                    .sort({ created_at: -1 })
+                    .sort({ createdAt: -1 })
                     .limit(15)
                     .then(latestmessages => {
                         console.log("Mongo latestmessages:", latestmessages);
