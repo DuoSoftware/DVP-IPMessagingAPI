@@ -398,58 +398,58 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                   
           //var id = data.uuid;
                // Debug: check if model is valid
-                console.log("Is PersonalMessage defined?", !!PersonalMessage);
-                console.log("Model name:", PersonalMessage?.modelName);
-                console.log("Collection name:", PersonalMessage?.collection?.name);
-                var from = message?.from;
-                var to = message?.to;
+            //     console.log("Is PersonalMessage defined?", !!PersonalMessage);
+            //     console.log("Model name:", PersonalMessage?.modelName);
+            //     console.log("Collection name:", PersonalMessage?.collection?.name);
+            //     var from = message?.from;
+            //     var to = message?.to;
 
-                const query = { $or: [] };
+            //     const query = { $or: [] };
 
-               // Custom case: if message.who === "client"
-                if (message?.who && message.who === "client") {
-                    query.$or.push({ from: from }, { to: from });
-                } else {
-                    // Normal case
-                    if (from && to) {
-                        query.$or.push({ from, to }, { from: to, to: from });
-                    } else if (from) {
-                        query.$or.push({ from });
-                    } else if (to) {
-                        query.$or.push({ to });
-                    }
-                }
-               console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
-                PersonalMessage.find(query)
-                    .lean()
-                    .sort({ createdAt: -1 })
-                    .limit(50)
-                    .then(latestmessages => {
-                        console.log("Mongo latestmessages:", latestmessages);
-                         if (latestmessages && Array.isArray(latestmessages)) {
-                            // latestmessages = Common.DecryptMessages(latestmessages);
-                            // console.log("Raw messages from Mongo:", latestmessages);
+            //    // Custom case: if message.who === "client"
+            //     if (message?.who && message.who === "client") {
+            //         query.$or.push({ from: from }, { to: from });
+            //     } else {
+            //         // Normal case
+            //         if (from && to) {
+            //             query.$or.push({ from, to }, { from: to, to: from });
+            //         } else if (from) {
+            //             query.$or.push({ from });
+            //         } else if (to) {
+            //             query.$or.push({ to });
+            //         }
+            //     }
+            //    console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
+            //     PersonalMessage.find(query)
+            //         .lean()
+            //         .sort({ createdAt: -1 })
+            //         .limit(50)
+            //         .then(latestmessages => {
+            //             console.log("Mongo latestmessages:", latestmessages);
+            //              if (latestmessages && Array.isArray(latestmessages)) {
+            //                 // latestmessages = Common.DecryptMessages(latestmessages);
+            //                 // console.log("Raw messages from Mongo:", latestmessages);
                           
                             
-                            io.emit("latestmessages", {
-                            from: message.from,
-                            messages: latestmessages.reverse(),
-                           });
-                        //   console.log("Decrypted messages:", latestmessages);
+            //                 io.emit("latestmessages", {
+            //                 from: message.from,
+            //                 messages: latestmessages.reverse(),
+            //                });
+            //             //   console.log("Decrypted messages:", latestmessages);
                
-                        } else {
-                            logger.error("No new message found");
-                            io.emit("connectionerror", {
-                            action: "latestmessages",
-                            data: data,
-                            message: "no data found",
-                            });
-                        }// exit after test
+            //             } else {
+            //                 logger.error("No new message found");
+            //                 io.emit("connectionerror", {
+            //                 action: "latestmessages",
+            //                 data: data,
+            //                 message: "no data found",
+            //                 });
+            //             }// exit after test
                        
-                    })
-                    .catch(err => {
-                        console.error("❌ Query error:", err);
-                    });
+            //         })
+            //         .catch(err => {
+            //             console.error("❌ Query error:", err);
+            //         });
             
             }).catch(err => {
                 console.error("❌ MongoDB connection failed:", err);
