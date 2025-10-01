@@ -381,7 +381,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     tenant: message.tenant,  // Tenant ID
                     BusinessUnit: message.BusinessUnit || "default",  // Business unit
                 });
-                console.log("PersonalMessage instance created:", personalMessage);
+                
                 
                 // Save the PersonalMessage to MongoDB
                 personalMessage.save()
@@ -429,6 +429,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                          if (latestmessages && Array.isArray(latestmessages)) {
                             // latestmessages = Common.DecryptMessages(latestmessages);
                             // console.log("Raw messages from Mongo:", latestmessages);
+
                             io.to(agent).emit("latestmessages", {
                             from: message.from,
                             messages: latestmessages.reverse(),
