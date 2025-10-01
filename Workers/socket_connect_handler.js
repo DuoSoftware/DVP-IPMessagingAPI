@@ -363,17 +363,17 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     type: message.type || "text",  // Default type is text
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    status: "pending",  // Assuming all messages are pending when created
-                    uuid: id,  // UUID to uniquely identify the message
-                    message: message.data || message.message,  // The actual message content
-                    data: message.data || message.message,  // The data field (if any)
-                    channel: message.channel || "default",  // Default channel if not provided
-                    wa_id: message.wa_id,  // WhatsApp ID (from message)
-                    session: message.session,  // Session ID (from message)
-                    from: message.from,  // Sender's identifier
-                    to: message.to,  // Recipient's identifier
-                    direction: "inbound",  // Message direction (outbound in this case)
-                    agentId: message.agentId,  // Agent ID (who is sending the message)
+                    status: "pending",  
+                    uuid: id,  
+                    message: message.data || message.message, 
+                    data: message.data || message.message, 
+                    channel: message.channel || "default",  
+                    wa_id: message.wa_id,  
+                    session: message.session,  
+                    from: message.from,  
+                    to: message.to, 
+                    direction: "inbound",  
+                    agentId: message.agentId,  
                     agentName: message.agentName || message.from,  // Agent name, default to from if missing
                     jti: message.jti || "",  // JWT token ID (if any)
                     externalUserId: message.externalUserId || "",  // External user ID (if any)
