@@ -430,7 +430,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                             // latestmessages = Common.DecryptMessages(latestmessages);
                             // console.log("Raw messages from Mongo:", latestmessages);
 
-                            io.to(agent).emit("latestmessages", {
+                            io.emit("latestmessages", {
                             from: message.from,
                             messages: latestmessages.reverse(),
                            });
