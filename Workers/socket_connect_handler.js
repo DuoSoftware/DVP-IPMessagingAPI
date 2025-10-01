@@ -362,7 +362,10 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                   var from = message.from;
                   var to = message.to;
           //var id = data.uuid;
-
+               // Debug: check if model is valid
+                console.log("Is PersonalMessage defined?", !!PersonalMessage);
+                console.log("Model name:", PersonalMessage?.modelName);
+                console.log("Collection name:", PersonalMessage?.collection?.name);
                 var query = {
                     $or: [
                     { from: from, to: to },
