@@ -337,18 +337,13 @@ module.exports.send_message_agent = function(agent, eventName, message) {
         }
 
         try {
-            console.log("message.from", message.from);
-            console.log("message.to", message.to);
-            
-          
-          
 
         //   if (message.who && message.who === "client") {
         //     query = {
         //       $or: [{ from: from }, { to: from }],
         //     };
         //   }
-            console.log("Mongo query being used:", JSON.stringify(query, null, 2));
+            
             console.log("Sending message to agent:", agent);
             console.log("Event:", eventName);
             console.log("Message payload:", message);
