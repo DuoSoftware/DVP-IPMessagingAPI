@@ -213,18 +213,34 @@ module.exports.CreateEngagement = function (payload, cb) {
     }
 };
 
-module.exports.DecryptMessages = function (messages) {
+// module.exports.DecryptMessages = function (messages) {
 
+//     try {
+//        return messages.map(function (item) {
+//             item.data = crypto_handler.Decrypt(item.data);
+//             return item;
+//         })
+//     } catch (ex) {
+//         console.error(ex);
+//         return messages;
+//     }
+// };
+module.exports.DecryptMessages = function (messages) {
     try {
-       return messages.map(function (item) {
-            item.data = crypto_handler.Decrypt(item.data);
+        return messages.map(function (item) {
+            if (item.data && typeof item.data === 'string') {
+                item.data = crypto_handler.Decrypt(item.data);
+            } else {
+                console.error("Invalid message data:", item);
+            }
             return item;
-        })
+        });
     } catch (ex) {
-        console.error(ex);
-        return messages;
+        console.error("Error in DecryptMessages:", ex);
+        return messages;  // Return original messages if error occurs
     }
 };
+
 
 module.exports.http_post = function (serviceUrl,postData,tenant,company) {
 
