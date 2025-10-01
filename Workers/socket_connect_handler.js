@@ -372,7 +372,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     session: message.session,  // Session ID (from message)
                     from: message.from,  // Sender's identifier
                     to: message.to,  // Recipient's identifier
-                    direction: "outbound",  // Message direction (outbound in this case)
+                    direction: "inbound",  // Message direction (outbound in this case)
                     agentId: message.agentId,  // Agent ID (who is sending the message)
                     agentName: message.agentName || message.from,  // Agent name, default to from if missing
                     jti: message.jti || "",  // JWT token ID (if any)
