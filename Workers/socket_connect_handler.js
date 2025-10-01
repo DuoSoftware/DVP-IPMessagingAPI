@@ -395,8 +395,8 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                         console.error("Error saving message to MongoDB:", err);
                         reject(false);
                     });
-                //   var from = message.from;
-                //   var to = message.to;
+                  var from = message.from;
+                  var to = message.to;
           //var id = data.uuid;
                // Debug: check if model is valid
                 console.log("Is PersonalMessage defined?", !!PersonalMessage);
