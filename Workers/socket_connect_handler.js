@@ -364,7 +364,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     createdAt: new Date(),
                     updatedAt: new Date(),
                     status: "pending",  // Assuming all messages are pending when created
-                    uuid: message.uuid,  // UUID to uniquely identify the message
+                    uuid: message.id,  // UUID to uniquely identify the message
                     message: message.data || message.message,  // The actual message content
                     data: message.data || message.message,  // The data field (if any)
                     channel: message.channel || "default",  // Default channel if not provided
