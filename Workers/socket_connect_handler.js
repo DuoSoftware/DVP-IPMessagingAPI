@@ -436,12 +436,12 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                         console.log("Mongo latestmessages:", latestmessages);
                          if (latestmessages && Array.isArray(latestmessages)) {
                             latestmessages = Common.DecryptMessages(latestmessages);
-                            console.log("Raw messages from Mongo:", latestmessages);
+                            // console.log("Raw messages from Mongo:", latestmessages);
                             io.to(agent).emit("latestmessages", {
                             from: message.from,
                             messages: latestmessages.reverse(),
                            });
-                          console.log("Decrypted messages:", latestmessages);
+                        //   console.log("Decrypted messages:", latestmessages);
                
                         } else {
                             logger.error("No new message found");
