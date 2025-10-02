@@ -1,12 +1,15 @@
 module.exports = {
-    "Mongo":
-        {
-            "ip":"172.16.25.32",
-            "port":"27017",
-            "dbname":"facetone",
-            "password":"DuoS123",
-            "user":"duo"
-        },
+    
+  "Mongo": {
+    "ip": "172.16.25.32",
+    "port": "27017",
+    "dbname": "facetone",
+    "user": "duo",
+    "password": "DuoS123",
+    "type": "mongodb"
+  },
+
+
     "Redis":
         {
             "mode":"instance",//instance, cluster, sentinel
