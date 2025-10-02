@@ -9,7 +9,7 @@ var util = require('util');
 var uuid = require('node-uuid');
 //var PersonalMessage = require("dvp-mongomodels/model/Room").PersonalMessage;
 var  mongoose = require("mongoose");
-var  PersonalMessage = require("./model/personalmessage");
+var  PersonalMessage = require('./model/personal_message.js');
 require("./mongo_handler");
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
