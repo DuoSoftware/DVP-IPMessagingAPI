@@ -127,6 +127,8 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
                     var msg_data = JSON.parse(sessiondata).client_data;
                     msg_data.Skills = resource.Skills;
                     msg_data.SessionID = resource.SessionID;
+                    msg_data.from = msg_data.jti;
+                    msg_data.to = resource.ResourceInfo.ResourceName;
                     console.log("msg_data", msg_data);
                     console.log("resource", resource);
                     
