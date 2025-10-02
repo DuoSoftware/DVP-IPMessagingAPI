@@ -433,6 +433,7 @@ module.exports.send_message_to_agent = function (req, res) {
                         company: call_back_data.client_data.company,
                         tenant: call_back_data.client_data.tenant,
                         channel: call_back_data.client_data.channel,
+                        BusinessUnit: call_back_data.client_data.BusinessUnit,
                     };
 
                     socket_handler.send_message_agent(agent_id, 'message', data).then(function (value) {
