@@ -333,13 +333,12 @@ io.sockets.on('connection', function(socket) {
 
 module.exports.send_message_agent = function(agent, eventName, message) {
     console.log("Event:", eventName);
-      console.log("Message payload:", message);
+    console.log("Message payload:", message);
     return new Promise((fulfill, reject) => {
-           if (!agent || typeof agent !== "string") {
-            console.error("Invalid agent value:", agent);
-            return reject(false);
+        if (!agent || typeof agent !== "string") {
+        logger.error("Invalid agent value:", agent);
+        return reject(false);
         }
-
         try {
             
             console.log("Sending message to agent:", agent);
@@ -347,110 +346,48 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             console.log("Message payload:", message);
             io.to(agent).emit(eventName, message);
             console.log("Message emitted to agent:", agent);
-           // const mongoose = require("mongoose");
             let id = uuidv4();
-            // const mongoURI = "mongodb://duo:DuoS123@172.16.25.32:27017/facetone"; // your DB URI
-             //mongoose.Promise = global.Promise;
-            // mongoose.connect(mongoURI, {
-            //     useNewUrlParser: true,
-            //     useUnifiedTopology: true
-            // }).then(() => {
-            //       console.log("✅ MongoDB connected!");
-            //     const personalMessage = new PersonalMessage({
-            //         type: message.type || "text",  // Default type is text
-            //         createdAt: new Date(),
-            //         updatedAt: new Date(),
-            //         status: "pending",  
-            //         uuid: id,  
-            //         message: message.data ,
-            //         data: message.data|| message.message || "accept Request", // Message content
-            //         channel: message.channel || "default",  
-            //         wa_id: message.jti ,  // WhatsApp ID or similar identifier
-            //         session: message.sessionId,  
-            //         from: message.from ,  
-            //         to: agent, 
-            //         direction: "inbound",  
-            //         // agentId: agent,  
-            //         agentName: agent,  
-            //         jti: message.jti || "",  
-            //         externalUserId: message.externalUserId ,  
-            //         company: message.company, 
-            //         tenant: message.tenant,  
-            //         BusinessUnit: message.BusinessUnit || "default",  
-            //     });
-            //     personalMessage.save()
-            //         .then(() => {
-            //             logger.info("Message saved successfully to MongoDB");
-            //             console.log("Message saved successfully to MongoDB");
+            if (require("mongoose").connection.readyState !== 1) {
+            console.error("❌ MongoDB is not connected!");
+            return reject(false);
+            }
 
-            //             // Once the message is saved, resolve the promise
-            //             fulfill(true);
-            //         })
-            //         .catch((err) => {
-            //             console.error("Error saving message to MongoDB:", err);
-            //             reject(false);
-            //         });
-            // }).catch(err => {
-            //     console.error("❌ MongoDB connection failed:", err);
-            // });
-            // console.log("send_message_agent sent successfully");
-            // fulfill(true);
-                 if (require("mongoose").connection.readyState !== 1) {
-                console.error("❌ MongoDB is not connected!");
-                return reject(false);
-                }
+            const messageData = {
+                type: message.type || "text",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                status: "pending",
+                uuid: id,
+                message: message.data,
+                data: message.data || message.message || "accept Request",
+                channel: message.channel || "default",
+                wa_id: message.jti,
+                session: message.sessionId,
+                from: message.from,
+                to: agent,
+                direction: "inbound",
+                agentName: agent,
+                jti: message.jti || "",
+                externalUserId: message.externalUserId,
+                company: message.company,
+                tenant: message.tenant,
+                BusinessUnit: message.BusinessUnit || "default"
+            };
 
-                const messageData = {
-                    type: message.type || "text",
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    status: "pending",
-                    uuid: id,
-                    message: message.data,
-                    data: message.data || message.message || "accept Request",
-                    channel: message.channel || "default",
-                    wa_id: message.jti,
-                    session: message.sessionId,
-                    from: message.from,
-                    to: agent,
-                    direction: "inbound",
-                    agentName: agent,
-                    jti: message.jti || "",
-                    externalUserId: message.externalUserId,
-                    company: message.company,
-                    tenant: message.tenant,
-                    BusinessUnit: message.BusinessUnit || "default"
-                };
-
-                // Using create() instead of new + save()
-                PersonalMessage.create(messageData)
-                    .then(doc => {
-                        console.log("Message saved successfully to MongoDB:", doc);
-                        fulfill(true);
-                    })
-                    .catch(err => {
-                        console.error("Error saving message to MongoDB:", err);
-                        reject(false);
-                    });
+            PersonalMessage.create(messageData)
+            .then(doc => {
+                logger.info("Message saved successfully to MongoDB:", doc);
+                fulfill(true);
+            })
+            .catch(err => {
+                logger.error("Failed to save message to MongoDB:", err);
+                reject(false);
+            });
             
         } catch (err) {
-            console.error("Error sending message to agent:", agent, err);
+            logger.error("Unexpected error sending message to agent:", agent, err);
             reject(false);
         }
-        // adapter.clients expects a callback with (err, clients)
-        // io.sockets.adapter.clients([agent], (err, clients) => {
-        //     console.log("clients:", clients);
-        //     console.log("err:", err);
-
-        //     if (!err && clients && clients.length > 0) {
-        //         io.to(agent).emit(eventName, message);
-        //         console.log("send_message_agent sent");
-        //         fulfill(true);
-        //     } else {
-        //         console.log("Fail to send message Agent:", agent);
-        //         reject(false);
-        //     }
-        // });
     });
 };
 
