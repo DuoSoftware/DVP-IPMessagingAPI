@@ -344,10 +344,10 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             console.log("Message payload:", message);
             io.to(agent).emit(eventName, message);
             console.log("Message emitted to agent:", agent);
-            // const mongoose = require("mongoose");
+            const mongoose = require("mongoose");
             let id = uuidv4();
             // const mongoURI = "mongodb://duo:DuoS123@172.16.25.32:27017/facetone"; // your DB URI
-            // mongoose.Promise = global.Promise;
+             mongoose.Promise = global.Promise;
             // mongoose.connect(mongoURI, {
             //     useNewUrlParser: true,
             //     useUnifiedTopology: true
@@ -392,7 +392,15 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             // });
             // console.log("send_message_agent sent successfully");
             // fulfill(true);
-            
+                if (mongoose.connection.readyState === 1) {
+    console.log("✅ MongoDB is already connected");
+} else if (mongoose.connection.readyState === 2) {
+    console.log("🔄 MongoDB is connecting...");
+} else {
+    console.error("❌ MongoDB is not connected!");
+    // Optionally, handle reconnection logic or reject operation
+}
+
                 const personalMessage = new PersonalMessage({
                     type: message.type || "text",  // Default type is text
                     createdAt: new Date(),
