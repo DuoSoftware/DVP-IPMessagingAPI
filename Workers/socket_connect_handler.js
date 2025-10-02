@@ -365,7 +365,8 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     updatedAt: new Date(),
                     status: "pending",  
                     uuid: id,  
-                    message: message.data || message.message || "accept Request",  // Message content
+                    message: message.data || message.message || "accept Request",
+                    data: message.data, // Message content
                     channel: message.channel || "default",  
                     wa_id: message.jti ,  // WhatsApp ID or similar identifier
                     session: message.sessionId,  
