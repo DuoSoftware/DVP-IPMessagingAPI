@@ -373,8 +373,8 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     from: message.from,  
                     to: message.to, 
                     direction: "inbound",  
-                    agentId: message.name || message.to,  // Agent ID, default to 'to' if missing
-                    agentName: message.agentName || message.to,  // Agent name, default to from if missing
+                    // agentId: agent,  // Agent ID, default to 'to' if missing
+                    agentName: agent,  // Agent name, default to from if missing
                     jti: message.jti || "",  // JWT token ID (if any)
                     externalUserId: message.externalUserId ,  // External user ID (if any)
                     company: message.company,  // Company ID
