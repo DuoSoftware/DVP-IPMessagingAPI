@@ -416,7 +416,10 @@ module.exports.send_message_to_agent = function (req, res) {
             redisClient.hget(bot_usr_redis_id, session_id, function (err, obj) {
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
-
+                    console.log("call_back_data", call_back_data);
+                    console.log("req.body.Message", req.body);
+                    console.log("agent_id", req.params);
+                    
                     var data = {
                         from: call_back_data.client_data.jti,
                         display: call_back_data.client_data.name,
