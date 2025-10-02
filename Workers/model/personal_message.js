@@ -28,4 +28,4 @@ const personalMessageSchema = new Schema({
     BusinessUnit: String
 });
 
-module.exports.PersonalMessage = mongoose.model("PersonalMessage", personalMessageSchema);
+module.exports = mongoose.model("PersonalMessage", personalMessageSchema);
