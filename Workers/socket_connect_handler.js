@@ -365,15 +365,15 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     updatedAt: new Date(),
                     status: "pending",  
                     uuid: id,  
-                    message: message.data || message.message, 
-                    data: message.data || message.message, 
+                    message: message.data || message.message || "accept Request",  // Message content
+                    data: message.data || message.message || "ccept Request",  // Message content
                     channel: message.channel || "default",  
-                    wa_id: message.jti,  
+                    wa_id: message.jti ,  // WhatsApp ID or similar identifier
                     session: message.sessionId,  
                     from: message.from,  
                     to: message.to, 
                     direction: "inbound",  
-                    agentId: message.agentId,  
+                    agentId: message.name || message.from,  // Agent ID, default to 'to' if missing
                     agentName: message.agentName || message.from,  // Agent name, default to from if missing
                     jti: message.jti || "",  // JWT token ID (if any)
                     externalUserId: message.externalUserId || "",  // External user ID (if any)

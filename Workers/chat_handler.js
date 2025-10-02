@@ -425,6 +425,7 @@ module.exports.send_message_to_agent = function (req, res) {
                         sessionId: call_back_data.client_data.sessionId,
                         from: call_back_data.client_data.jti,
                         display: call_back_data.client_data.name,
+                        jti: call_back_data.client_data.jti,
                         time: Date.now(),
                         to: agent_id,
                         who: 'client',
