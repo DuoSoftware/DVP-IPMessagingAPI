@@ -344,7 +344,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             console.log("Message payload:", message);
             io.to(agent).emit(eventName, message);
             console.log("Message emitted to agent:", agent);
-            const mongoose = require("mongoose");
+            // const mongoose = require("mongoose");
             let id = uuidv4();
             // const mongoURI = "mongodb://duo:DuoS123@172.16.25.32:27017/facetone"; // your DB URI
             // mongoose.Promise = global.Promise;
