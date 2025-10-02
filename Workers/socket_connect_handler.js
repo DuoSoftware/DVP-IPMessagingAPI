@@ -370,8 +370,8 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     channel: message.channel || "default",  
                     wa_id: message.jti ,  // WhatsApp ID or similar identifier
                     session: message.sessionId,  
-                    from: message.from,  
-                    to: message.to, 
+                    from: message.from ,  
+                    to: agent, 
                     direction: "inbound",  
                     // agentId: agent,  // Agent ID, default to 'to' if missing
                     agentName: agent,  // Agent name, default to from if missing

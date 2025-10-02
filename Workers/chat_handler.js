@@ -128,6 +128,8 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
                     msg_data.Skills = resource.Skills;
                     msg_data.SessionID = resource.SessionID;
                     console.log("msg_data", msg_data);
+                    console.log("resource", resource);
+                    
                     
                  return   socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', msg_data).then(function (value) {
                         console.log("**** Agent Found and informed to agent ****",value);
