@@ -269,7 +269,8 @@ module.exports.initialize_chat = function (req, res) {
                 to: req.params.CustomerID,
                 sessionId: req.body.api_session_id,
                 attributes: req.body.attributes,
-                priority: req.body.priority
+                priority: req.body.priority,
+                BusinessUnit: req.body.aud
             }
         };
 
@@ -421,13 +422,17 @@ module.exports.send_message_to_agent = function (req, res) {
                     console.log("agent_id", req.params);
                     
                     var data = {
+                        sessionId: call_back_data.client_data.sessionId,
                         from: call_back_data.client_data.jti,
                         display: call_back_data.client_data.name,
                         time: Date.now(),
                         to: agent_id,
                         who: 'client',
                         id: uuid.v1(),
-                        message: req.body.Message
+                        message: req.body.Message,
+                        company: call_back_data.client_data.company,
+                        tenant: call_back_data.client_data.tenant,
+                        channel: call_back_data.client_data.channel
                     };
 
                     socket_handler.send_message_agent(agent_id, 'message', data).then(function (value) {
