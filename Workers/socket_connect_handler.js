@@ -338,12 +338,6 @@ module.exports.send_message_agent = function(agent, eventName, message) {
         }
 
         try {
-
-        //   if (message.who && message.who === "client") {
-        //     query = {
-        //       $or: [{ from: from }, { to: from }],
-        //     };
-        //   }
             
             console.log("Sending message to agent:", agent);
             console.log("Event:", eventName);
@@ -352,14 +346,54 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             console.log("Message emitted to agent:", agent);
             const mongoose = require("mongoose");
             let id = uuidv4();
-            const mongoURI = "mongodb://duo:DuoS123@172.16.25.32:27017/facetone"; // your DB URI
-            mongoose.Promise = global.Promise;
-            mongoose.connect(mongoURI, {
-                useNewUrlParser: true,
-                useUnifiedTopology: true
-            }).then(() => {
-                console.log("✅ MongoDB connected!");
-                 const personalMessage = new PersonalMessage({
+            // const mongoURI = "mongodb://duo:DuoS123@172.16.25.32:27017/facetone"; // your DB URI
+            // mongoose.Promise = global.Promise;
+            // mongoose.connect(mongoURI, {
+            //     useNewUrlParser: true,
+            //     useUnifiedTopology: true
+            // }).then(() => {
+            //       console.log("✅ MongoDB connected!");
+            //     const personalMessage = new PersonalMessage({
+            //         type: message.type || "text",  // Default type is text
+            //         createdAt: new Date(),
+            //         updatedAt: new Date(),
+            //         status: "pending",  
+            //         uuid: id,  
+            //         message: message.data ,
+            //         data: message.data|| message.message || "accept Request", // Message content
+            //         channel: message.channel || "default",  
+            //         wa_id: message.jti ,  // WhatsApp ID or similar identifier
+            //         session: message.sessionId,  
+            //         from: message.from ,  
+            //         to: agent, 
+            //         direction: "inbound",  
+            //         // agentId: agent,  
+            //         agentName: agent,  
+            //         jti: message.jti || "",  
+            //         externalUserId: message.externalUserId ,  
+            //         company: message.company, 
+            //         tenant: message.tenant,  
+            //         BusinessUnit: message.BusinessUnit || "default",  
+            //     });
+            //     personalMessage.save()
+            //         .then(() => {
+            //             logger.info("Message saved successfully to MongoDB");
+            //             console.log("Message saved successfully to MongoDB");
+
+            //             // Once the message is saved, resolve the promise
+            //             fulfill(true);
+            //         })
+            //         .catch((err) => {
+            //             console.error("Error saving message to MongoDB:", err);
+            //             reject(false);
+            //         });
+            // }).catch(err => {
+            //     console.error("❌ MongoDB connection failed:", err);
+            // });
+            // console.log("send_message_agent sent successfully");
+            // fulfill(true);
+            
+                const personalMessage = new PersonalMessage({
                     type: message.type || "text",  // Default type is text
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -373,19 +407,17 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                     from: message.from ,  
                     to: agent, 
                     direction: "inbound",  
-                    // agentId: agent,  // Agent ID, default to 'to' if missing
-                    agentName: agent,  // Agent name, default to from if missing
-                    jti: message.jti || "",  // JWT token ID (if any)
-                    externalUserId: message.externalUserId ,  // External user ID (if any)
-                    company: message.company,  // Company ID
-                    tenant: message.tenant,  // Tenant ID
-                    BusinessUnit: message.BusinessUnit || "default",  // Business unit
+                    // agentId: agent,  
+                    agentName: agent,  
+                    jti: message.jti || "",  
+                    externalUserId: message.externalUserId ,  
+                    company: message.company, 
+                    tenant: message.tenant,  
+                    BusinessUnit: message.BusinessUnit || "default",  
                 });
-              //  console.log("PersonalMessage instance created:", personalMessage);
-                
-                // Save the PersonalMessage to MongoDB
                 personalMessage.save()
                     .then(() => {
+                        logger.info("Message saved successfully to MongoDB");
                         console.log("Message saved successfully to MongoDB");
 
                         // Once the message is saved, resolve the promise
@@ -395,91 +427,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                         console.error("Error saving message to MongoDB:", err);
                         reject(false);
                     });
-                  
-          //var id = data.uuid;
-               // Debug: check if model is valid
-            //     console.log("Is PersonalMessage defined?", !!PersonalMessage);
-            //     console.log("Model name:", PersonalMessage?.modelName);
-            //     console.log("Collection name:", PersonalMessage?.collection?.name);
-            //     var from = message?.from;
-            //     var to = message?.to;
-
-            //     const query = { $or: [] };
-
-            //    // Custom case: if message.who === "client"
-            //     if (message?.who && message.who === "client") {
-            //         query.$or.push({ from: from }, { to: from });
-            //     } else {
-            //         // Normal case
-            //         if (from && to) {
-            //             query.$or.push({ from, to }, { from: to, to: from });
-            //         } else if (from) {
-            //             query.$or.push({ from });
-            //         } else if (to) {
-            //             query.$or.push({ to });
-            //         }
-            //     }
-            //    console.log("Initial Mongo query:", JSON.stringify(query, null, 2));
-            //     PersonalMessage.find(query)
-            //         .lean()
-            //         .sort({ createdAt: -1 })
-            //         .limit(50)
-            //         .then(latestmessages => {
-            //             console.log("Mongo latestmessages:", latestmessages);
-            //              if (latestmessages && Array.isArray(latestmessages)) {
-            //                 // latestmessages = Common.DecryptMessages(latestmessages);
-            //                 // console.log("Raw messages from Mongo:", latestmessages);
-                          
-                            
-            //                 io.emit("latestmessages", {
-            //                 from: message.from,
-            //                 messages: latestmessages.reverse(),
-            //                });
-            //             //   console.log("Decrypted messages:", latestmessages);
-               
-            //             } else {
-            //                 logger.error("No new message found");
-            //                 io.emit("connectionerror", {
-            //                 action: "latestmessages",
-            //                 data: data,
-            //                 message: "no data found",
-            //                 });
-            //             }// exit after test
-                       
-            //         })
-            //         .catch(err => {
-            //             console.error("❌ Query error:", err);
-            //         });
             
-            }).catch(err => {
-                console.error("❌ MongoDB connection failed:", err);
-            });
-            // PersonalMessage.find(query)
-            // .lean()
-            // .sort({ created_at: -1 })
-            // .limit(100)
-            // .exec(function (err, latestmessages) {
-            //     console.log("Mongo query:", JSON.stringify(query, null, 2));
-            //   if (latestmessages && Array.isArray(latestmessages)) {
-            //     latestmessages = Common.DecryptMessages(latestmessages);
-            //     console.log("Raw messages from Mongo:", latestmessages);
-            //     io.to(agent).emit("latestmessages", {
-            //       from: message.from,
-            //       messages: latestmessages.reverse(),
-            //     });
-            //     console.log("Decrypted messages:", latestmessages);
-            //     //io.to(socket.decoded_token.iss).emit("latestmessages", latestmessages.reverse());
-            //   } else {
-            //     logger.error("No new message found");
-            //     io.emit("connectionerror", {
-            //       action: "latestmessages",
-            //       data: data,
-            //       message: "no data found",
-            //     });
-            //   }
-            // });
-            console.log("send_message_agent sent successfully");
-            fulfill(true);
         } catch (err) {
             console.error("Error sending message to agent:", agent, err);
             reject(false);
