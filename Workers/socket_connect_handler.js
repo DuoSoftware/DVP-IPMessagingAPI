@@ -121,7 +121,7 @@ io.sockets.on('connection', function(socket) {
     try {
         // Extract token from client handshake auth
         const token = socket.handshake.auth?.token?.split(" ")[1]; // remove "Bearer "
-        console.log("socket.handshake.auth", socket.handshake.auth);
+        logger.info("socket.handshake.auth", socket.handshake.auth);
         
         if (!token) {
             console.log("No token provided, disconnecting socket: " + socket.id);
@@ -137,54 +137,49 @@ io.sockets.on('connection', function(socket) {
         socket.authenticated = true;
 
     } catch (err) {
-        console.log("JWT verification failed for socket: " + socket.id, err);
+        logger.error("JWT verification failed for socket: " + socket.id, err)
         socket.disconnect();
     }
 })
 .on('authenticated', function (socket) {
-    console.log("Client connected: " + socket.id); // prints socket ID on connection
-    console.log("JWT authenticated for clientID: " + socket.decoded_token.iss);
-
-    console.log(socket.decoded_token.iss);
-    console.log('authenticated received ');
+    console.log("Client connected: " + socket.id); 
+    logger.info("JWT authenticated for clientID: " + socket.decoded_token.iss);
+    logger.info("authenticated received");
     var clientID = socket.decoded_token.iss;
-    console.log("Client logged " + clientID);
-    socket.emit('clientdetails', clientID);
-    console.log(clientID);
+    logger.info("Client logged " + clientID);
 
     socket.join(clientID);
 
     socket.on('authenticate', function (data) {
-        console.log("authenticate  received from client ");
-        console.log("authenticate  : " + JSON.stringify(data));
+        logger.info("authenticate received from client ");
+        logger.info("authenticate  : " + JSON.stringify(data));
     });
 
     socket.on('accept', function (data) {
-        console.log("authenticate  received from client ");
-        console.log("authenticate  : " + JSON.stringify(data));
+        logger.info("accept  received from client ");
+        logger.info("accept  : " + JSON.stringify(data));
     });
 
     socket.on('reply', function (data) {
-        console.log("Reply received from client ");
-        console.log("Message : " + data.Message);
+        logger.info("Reply received from client ");
+        logger.info("Reply  : " + JSON.stringify(data));
         var clientTopic = data.Tkey;
-        console.log("Token key from Client " + clientTopic);
+        logger.info("Token key from Client " + clientTopic);
         redisManager.ResponseUrlPicker(clientTopic, TTL, function (errURL, resURL) {
 
             if (errURL) {
-                console.log("Error in searching URL ", errURL);
+                logger.error("Error in searching URL ", errURL);
             }
             else {
                 if (!resURL || resURL == null || resURL == "") {
-                    console.log("Invalid URL records found ", resURL)
+                    logger.error("Invalid URL records found", resURL);
                 }
                 else {
                     var direction = resURL[0];
                     var URL = resURL[1];
                     var reference = resURL[2];
-
-                    console.log("URL " + URL);
-                    console.log("DIRECTION " + direction);
+                    logger.info("URL" + URL);
+                    logger.info("DIRECTION " + direction);
 
                     if (direction == "STATELESS") {
 
@@ -198,26 +193,24 @@ io.sockets.on('connection', function(socket) {
                                 //Ref:Refs[clientTopic]
                             };
 
-                            console.log("Reply to sender .... " + JSON.stringify(replyObj));
-
+                            logger.info("Reply to sender .... " + JSON.stringify(replyObj));
                             var optionsX = {url: URL, method: "POST", json: replyObj};
                             httpReq(optionsX, function (errorX, responseX, dataX) {
 
                                 if (errorX) {
-                                    console.log("ERROR sending request " + errorX);
+                                    logger.error("Error sending request ", errorX);
                                 }
                                 else if (!errorX && responseX != undefined) {
-
-                                    console.log("Sent " + data + " To " + URL);
-
+                                    logger.info("Sent" + data + " To " + URL);
                                 }
                                 else {
-                                    console.log("Nooooooo");
+                                    logger.info("No response from " + URL);
+                                    
                                 }
                             });
                         }
                         else {
-                            console.log("Invalid Callback URL found " + resURL);
+                            logger.error("Invalid URL found " + resURL);
                         }
                     }
 
@@ -227,10 +220,7 @@ io.sockets.on('connection', function(socket) {
     });
     socket.on('disconnect', function (reason) {
         var ClientID = socket.decoded_token.iss;
-        console.log("Disconnected " + socket.id + " Reason " + reason);
-        console.log("Socket ID ", socket.id);
-        console.log("ClientID " + ClientID);
-
+        logger.info("Disconnected " + socket.id + " Reason " + reason);
     });
 
     socket.emit('message', "Hello " + socket.decoded_token.iss);
@@ -332,23 +322,17 @@ io.sockets.on('connection', function(socket) {
 // };
 
 module.exports.send_message_agent = function(agent, eventName, message) {
-    console.log("Event:", eventName);
-    console.log("Message payload:", message);
     return new Promise((fulfill, reject) => {
         if (!agent || typeof agent !== "string") {
         logger.error("Invalid agent value:", agent);
         return reject(false);
         }
         try {
-            
-            console.log("Sending message to agent:", agent);
-            console.log("Event:", eventName);
-            console.log("Message payload:", message);
+            logger.info("Sending message to agent:", agent, "Event:", eventName, "Message payload:", message);
             io.to(agent).emit(eventName, message);
-            console.log("Message emitted to agent:", agent);
             let id = uuidv4();
             if (require("mongoose").connection.readyState !== 1) {
-            console.error("❌ MongoDB is not connected!");
+            logger.error("MongoDB is not connected!");
             return reject(false);
             }
 

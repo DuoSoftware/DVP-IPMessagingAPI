@@ -22,7 +22,7 @@ var server_id = "CHATSERVER";
 var httpPost = function (companyInfo, serviceUrl, postData, callback) {
     var jsonStr = JSON.stringify(postData);
     var accessToken = util.format("bearer %s", config.Host.token);
-    console.log('HTTP POST Request:: %s', serviceUrl);
+    logger.info('HTTP POST Request:: %s', serviceUrl);
     var options = {
         url: serviceUrl,
         method: 'POST',
@@ -36,9 +36,9 @@ var httpPost = function (companyInfo, serviceUrl, postData, callback) {
     try {
         request.post(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                console.log('upload failed:', err);
+                logger.error('upload failed:', err);
             }
-            console.log('Server returned: %j', body);
+            logger.info('Server returned: %j', body);
             callback(err, httpResponse, body);
         });
     }catch(ex){
@@ -49,7 +49,7 @@ var httpPost = function (companyInfo, serviceUrl, postData, callback) {
 var httpPut = function (companyInfo, serviceUrl, postData, callback) {
     var jsonStr = JSON.stringify(postData);
     var accessToken = util.format("bearer %s", config.Host.token);
-    console.log('HTTP PUT Request:: %s', serviceUrl);
+    logger.info('HTTP PUT Request:: %s', serviceUrl);
     var options = {
         url: serviceUrl,
         method: 'PUT',
@@ -63,9 +63,9 @@ var httpPut = function (companyInfo, serviceUrl, postData, callback) {
     try {
         request.put(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                console.log('upload failed:', err);
+                logger.error('upload failed:', err);
             }
-            console.log('Server returned: %j', body);
+            logger.info('Server returned: %j', body)
             callback(err, httpResponse, body);
         });
     }catch(ex){
@@ -75,7 +75,7 @@ var httpPut = function (companyInfo, serviceUrl, postData, callback) {
 
 var httpGet = function (companyInfo, serviceUrl, callback) {
     var accessToken = util.format("bearer %s", config.Host.token);
-    console.log('HTTP GET Request:: %s', serviceUrl);
+    logger.info('HTTP GET Request:: %s', serviceUrl);
     var options = {
         url: serviceUrl,
         headers: {
@@ -87,9 +87,9 @@ var httpGet = function (companyInfo, serviceUrl, callback) {
     try {
         request(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                console.log('upload failed:', err);
+                logger.error('upload failed:', err);
             }
-            console.log('Server returned: %j', body);
+            logger.info('Server returned: %j', body);
             callback(err, httpResponse, body);
         });
     }catch(ex) {
@@ -99,7 +99,7 @@ var httpGet = function (companyInfo, serviceUrl, callback) {
 
 var httpDelete = function (companyInfo, serviceUrl, callback) {
     var accessToken = util.format("bearer %s", config.Host.token);
-    console.log('HTTP GET Request:: %s', serviceUrl);
+    logger.info('HTTP DELETE Request:: %s', serviceUrl);
     var options = {
         url: serviceUrl,
         method: 'DELETE',
@@ -112,8 +112,9 @@ var httpDelete = function (companyInfo, serviceUrl, callback) {
     try {
         request(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                console.log('upload failed:', err);
+                logger.error('upload failed:', err);
             }
+            logger.info('Server returned: %j', body);
             console.log('Server returned: %j', body);
             callback(err, httpResponse, body);
         });
