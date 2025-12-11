@@ -341,7 +341,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 status: "pending",
                 uuid: id,
                 message: message.data,
-                data: message.data || message.message || "accept Request",
+                data: message.data || message.message || "Client Request",
                 channel: message.channel || "default",
                 wa_id: message.jti,
                 session: message.sessionId,
