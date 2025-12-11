@@ -129,8 +129,8 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
                     msg_data.SessionID = resource.SessionID;
                     msg_data.from = msg_data.jti;
                     msg_data.to = resource.ResourceInfo.ResourceName;
-                    console.log("msg_data", msg_data);
-                    console.log("resource", resource);
+                    msg_data.ResourceId = resource.ResourceInfo.ResourceId;
+                    console.log("msg_data.ResourceId",msg_data.ResourceId);
                     
                     
                  return   socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', msg_data).then(function (value) {

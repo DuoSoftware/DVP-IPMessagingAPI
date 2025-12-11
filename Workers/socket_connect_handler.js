@@ -142,7 +142,6 @@ io.sockets.on('connection', function(socket) {
     }
 })
 .on('authenticated', function (socket) {
-    console.log("Client connected: " + socket.id); 
     logger.info("JWT authenticated for clientID: " + socket.decoded_token.iss);
     logger.info("authenticated received");
     var clientID = socket.decoded_token.iss;
@@ -178,8 +177,7 @@ io.sockets.on('connection', function(socket) {
                     var direction = resURL[0];
                     var URL = resURL[1];
                     var reference = resURL[2];
-                    logger.info("URL" + URL);
-                    logger.info("DIRECTION " + direction);
+                    logger.info("URL" + URL, "Direction " + direction, "Reference " + reference);
 
                     if (direction == "STATELESS") {
 
@@ -350,6 +348,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 from: message.from,
                 to: agent,
                 direction: "inbound",
+                agentId: message.ResourceId || "",
                 agentName: agent,
                 jti: message.jti || "",
                 externalUserId: message.externalUserId,
@@ -357,6 +356,8 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 tenant: message.tenant,
                 BusinessUnit: message.BusinessUnit || "default"
             };
+            console.log("messageData",messageData);
+            
 
             PersonalMessage.create(messageData)
             .then(doc => {

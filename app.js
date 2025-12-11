@@ -15,7 +15,7 @@ var chat_handler = require('./Workers/chat_handler');
 
 //-------------------------  Restify Server ------------------------- \\
 var RestServer = restify.createServer({
-    name: "ResourceService",
+    name: "IpmessagingAPI",
     version: '1.0.0'
 }, function (req, res) {
 
@@ -34,14 +34,13 @@ RestServer.use(restify.queryParser());
 var jwt = require('restify-jwt');
 var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
+const { logger } = require('dvp-common/LogHandler/CommonLogHandler');
 RestServer.use(jwt({secret: secret.Secret}));
 // ---------------- Security -------------------------- \\
 
 //Server listen
 RestServer.listen(port, function () {
-    console.log('%s listening at %s', RestServer.name, RestServer.url);
-
-
+    logger.info('%s listening at %s', RestServer.name, RestServer.url);
 });
 
 //------------------------- End Restify Server ------------------------- \\
