@@ -115,7 +115,6 @@ var httpDelete = function (companyInfo, serviceUrl, callback) {
                 logger.error('upload failed:', err);
             }
             logger.info('Server returned: %j', body);
-            console.log('Server returned: %j', body);
             callback(err, httpResponse, body);
         });
     }catch(ex) {

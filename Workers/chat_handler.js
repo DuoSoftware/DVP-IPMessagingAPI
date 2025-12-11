@@ -522,11 +522,15 @@ module.exports.message_back_to_client = function (req, res) {
         var companyId = req.user.company;
         var jsonString;
         var resource = req.body;
+        console.log("resource",resource);
+        
         if (resource) {
             redisClient.hget(bot_usr_redis_id, resource.body.sessionId, function (err, obj) {
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
                     resource.client_data = call_back_data.client_data;
+                    console.log("ipmessagingapi chathandler 523 resource",resource);
+                    
                     Common.http_post(call_back_data.call_back_url, resource, call_back_data.tenant, call_back_data.company).then(function (response) {
                         if(response&& response.status===false){
                             remove_chat_session(call_back_data.tenant, call_back_data.company,resource.body.sessionId, 'ClientRejected');
