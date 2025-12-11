@@ -11,7 +11,7 @@ var Common = require('./Common.js');
 var ards = require('./Ards.js');
 var redis_handler = require('./redis_handler.js');
 var socket_handler = require('./socket_connect_handler.js');
-
+var  PersonalMessage = require('./model/personal_message.js');
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var uuid = require('node-uuid');
 var bot_usr_redis_id = config.Host.botclientusers;
@@ -305,7 +305,28 @@ module.exports.initialize_chat = function (req, res) {
                             businessUnit: req.body.aud
                         };
                         console.log("client_data", client_data);
+
+                        PersonalMessage.find({
+                        $and: [
+                            { $or: [{ from: req.params.CustomerID }, { to: req.params.CustomerID }] },
+                            { data: "Your Request Accepted By Agent!" }
+                        ]
+                        })
+                        .sort({ createdAt: -1 })
+                        .limit(1)
+                        .then(function(docs){
+                        const latest = (Array.isArray(docs) && docs.length > 0) ? docs[0] : null;
+                        console.log("latest",latest);
                         
+                        const agentId = latest ? latest.agentId : null;
+                        console.log("Latest accepted agentName:", agentId);
+                        
+                        })
+                        .catch(function(err){
+                        console.error("Query failed:", err);
+                        
+                        });
+
                         ards.AddRequest(client_data, function (err, req_data) {
 
                             logger.info('initialize_chat AddRequest : %s ', req.body.api_session_id);
