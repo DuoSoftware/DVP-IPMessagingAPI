@@ -206,7 +206,7 @@ var AddRequest = function (req_data, callback) {
     var tenant  = req_data.tenant;
     var company  = req_data.company;
     var sessionId= req_data.sessionId;
-    var attributes=req_data.attributes;
+    var attributes= req_data.attributes;
     var priority = req_data.priority;
     var resourceCount = req_data.resourceCount;
     var otherInfo = req_data.otherInfo;
@@ -237,12 +237,12 @@ var AddRequest = function (req_data, callback) {
         "RequestType": "CHAT",
         "CallbackOption":"POST",
         "SessionId": sessionId,
-        "Attributes": ["23"],
+        "Attributes": attributes,
         "RequestServerId": server_id,
         "Priority": 0,
         "ResourceCount": resourceCount,
         "OtherInfo": otherInfo,
-        "BusinessUnit":"CallCenter"
+        "BusinessUnit":businessUnit
     };
 
     
