@@ -237,7 +237,7 @@ var AddRequest = function (req_data, callback) {
         "RequestType": "CHAT",
         "CallbackOption":"POST",
         "SessionId": sessionId,
-        "Attributes": attributes,
+        "Attributes": Array.isArray(attributes) ? attributes : [attributes],
         "RequestServerId": server_id,
         "Priority": 0,
         "ResourceCount": resourceCount,
