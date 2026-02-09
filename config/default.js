@@ -54,15 +54,15 @@ module.exports = {
 
         },
     "Services": {
-        "call_back_url": "ipmessagingapi.facetonelite.com",//ipmessagingapi.app.veery.cloud
+        "call_back_url": "ipmessagingapi.facetone.dialog.com",//ipmessagingapi.app.veery.cloud
         "call_back_url_port": '3002',
         "call_back_url_version":"1.0.0.0",
 
-        "interactionurl": "interactions.facetonelite.com",//interactions.app.veery.cloud
+        "interactionurl": "interactions.facetone.dialog.com",//interactions.app.veery.cloud
         "interactionport": '3637',
         "interactionversion":"1.0.0.0",
 
-        "ardsliteservice": "ardsliteservice.facetonelite.com",//ardsliteservice.app.veery.cloud
+        "ardsliteservice": "ardsliteservice.facetone.dialog.com",//ardsliteservice.app.veery.cloud
         "ardsliteport": "8828",
         "ardsliteversion": "1.0.0.0"
     }
