@@ -237,12 +237,12 @@ var AddRequest = function (req_data, callback) {
         "RequestType": "CHAT",
         "CallbackOption":"POST",
         "SessionId": sessionId,
-        "Attributes": ["22"],
+        "Attributes": ["23"],
         "RequestServerId": server_id,
         "Priority": 0,
         "ResourceCount": resourceCount,
         "OtherInfo": otherInfo,
-        "BusinessUnit":"ftdev"
+        "BusinessUnit":"CallCenter"
     };
 
     
