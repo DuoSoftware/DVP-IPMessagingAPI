@@ -274,7 +274,8 @@ module.exports.initialize_chat = function (req, res) {
                 sessionId: req.body.api_session_id,
                 attributes: req.body.attributes,
                 priority: req.body.priority,
-                BusinessUnit: req.body.aud
+                BusinessUnit: req.body.aud,
+                data: req.body.message
             }
         };
 
