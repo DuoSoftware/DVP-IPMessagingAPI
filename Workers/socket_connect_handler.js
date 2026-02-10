@@ -334,6 +334,8 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             return reject(false);
             }
 
+            console.log("Message to be saved to MongoDB:", message);
+
             const messageData = {
                 type: message.type || "text",
                 createdAt: new Date(),
