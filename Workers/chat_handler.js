@@ -548,7 +548,7 @@ module.exports.message_back_to_client = function (req, res) {
         let finalData = typeof resource.body.data === 'string' ? JSON.parse(resource.body.data) : resource.body.data;
         
         if (resource) {
-            redisClient.hget(bot_usr_redis_id, finalData.sessionId, function (err, obj) {
+            redisClient.hget(bot_usr_redis_id, finalData.originalData.sessionId, function (err, obj) {
                 if (obj) {
                     var call_back_data = JSON.parse(obj);
                     resource.client_data = call_back_data.client_data;
@@ -556,7 +556,7 @@ module.exports.message_back_to_client = function (req, res) {
                     
                     Common.http_post(call_back_data.call_back_url, resource, call_back_data.tenant, call_back_data.company).then(function (response) {
                         if(response&& response.status===false){
-                            remove_chat_session(call_back_data.tenant, call_back_data.company,finalData.sessionId, 'ClientRejected');
+                            remove_chat_session(call_back_data.tenant, call_back_data.company,finalData.originalData.sessionId, 'ClientRejected');
                         }
                         jsonString = messageFormatter.FormatMessage(undefined, "EXCEPTION", true, response);
                         logger.info('message_back_to_client - http_post : %s ', jsonString);
@@ -570,11 +570,11 @@ module.exports.message_back_to_client = function (req, res) {
                     if(resource.event_name==="sessionend"){
                         jsonString = messageFormatter.FormatMessage(undefined, "-------------******  Agent End Session ******----------------", true, resource);
                         logger.info('message_back_to_client -  : %s ', jsonString);
-                        remove_chat_session(tenantId, companyId,finalData.sessionId, 'NONE');
+                        remove_chat_session(tenantId, companyId,finalData.originalData.sessionId, 'NONE');
                     }
                 } else {
 
-                    remove_chat_session(tenantId, companyId,finalData.sessionId, 'NoSession');
+                    remove_chat_session(tenantId, companyId,finalData.originalData.sessionId, 'NoSession');
                     jsonString = messageFormatter.FormatMessage(undefined, "message_back_to_client - session expired", false, undefined);
                     logger.info('message_back_to_client : %s ', jsonString);
                     res.end(jsonString);
