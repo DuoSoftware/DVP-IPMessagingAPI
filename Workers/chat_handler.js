@@ -250,7 +250,7 @@ module.exports.long_term_token = function (req, res) {
 
 module.exports.initialize_chat = function (req, res) {
     try {
-        console.log("initialize_chat req.body", req.body);
+        // console.log("initialize_chat req.body", req.body);
         if (!req.body || !req.body.tenent || !req.body.company)
             throw new Error("invalid tenant or company.");
         var tenantId = req.body.tenent;
