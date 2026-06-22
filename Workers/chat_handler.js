@@ -351,6 +351,15 @@ module.exports.initialize_chat = function (req, res) {
                                     logger.error('no_agent_found -Direct routing  : %s ', reason);
                                 });
 
+                            } else if (resource && (resource.Position !== undefined || resource.QueueName)) {
+                                // Request was successfully queued — ARDS will call back via /ARDS/agent_found when an agent is free.
+                                // This happens when agents are online but all concurrency slots are occupied.
+                                jsonString = messageFormatter.FormatMessage(undefined, "processing request", true, {
+                                    status: "queued",
+                                    data: req_data
+                                });
+                                logger.info('initialize_chat AddRequest queued (Position: %s) : %s ', resource.Position, jsonString);
+                                res.end(jsonString);
                             } else {
                                 jsonString = messageFormatter.FormatMessage(undefined, "processing request", false, {
                                     status: "no_agent_found",
