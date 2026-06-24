@@ -25,7 +25,8 @@ const personalMessageSchema = new Schema({
     externalUserId: String,
     company: String,
     tenant: String,
-    BusinessUnit: String
+    BusinessUnit: String,
+    name: String
 });
 
 module.exports = mongoose.model("PersonalMessage", personalMessageSchema);

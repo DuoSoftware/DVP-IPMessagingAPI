@@ -356,7 +356,8 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 externalUserId: message.externalUserId,
                 company: message.company,
                 tenant: message.tenant,
-                BusinessUnit: message.BusinessUnit || "default"
+                BusinessUnit: message.BusinessUnit || "default",
+                name: message.name || ""
             };
             console.log("messageData",messageData);
             
