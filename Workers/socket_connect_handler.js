@@ -360,17 +360,30 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 name: message.name || ""
             };
             console.log("messageData",messageData);
-            
 
-            PersonalMessage.create(messageData)
-            .then(doc => {
-                logger.info("Message saved successfully to MongoDB:", doc);
-                fulfill(true);
-            })
-            .catch(err => {
-                logger.error("Failed to save message to MongoDB:", err);
-                reject(false);
-            });
+            const saveMessage = (resolvedName) => {
+                messageData.name = resolvedName;
+                PersonalMessage.create(messageData)
+                    .then(doc => {
+                        logger.info("Message saved successfully to MongoDB:", doc);
+                        fulfill(true);
+                    })
+                    .catch(err => {
+                        logger.error("Failed to save message to MongoDB:", err);
+                        reject(false);
+                    });
+            };
+
+            if (messageData.name) {
+                saveMessage(messageData.name);
+            } else {
+                PersonalMessage.findOne({ wa_id: message.jti, name: { $exists: true, $ne: "" } })
+                    .select("name")
+                    .then(existing => {
+                        saveMessage(existing ? existing.name : "");
+                    })
+                    .catch(() => saveMessage(""));
+            }
             
         } catch (err) {
             logger.error("Unexpected error sending message to agent:", agent, err);
