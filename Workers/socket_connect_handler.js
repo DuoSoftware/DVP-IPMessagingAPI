@@ -392,6 +392,12 @@ module.exports.send_message_agent = function(agent, eventName, message) {
     });
 };
 
+module.exports.isAgentOnline = function(agentProfile) {
+    return io.in(agentProfile).allSockets().then(function(ids) {
+        return ids.size > 0;
+    });
+};
+
 /*
 module.exports.send_message = function (clientID) {
 

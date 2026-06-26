@@ -139,6 +139,10 @@ function init_and_inform_to_agent(resource, tenantId, companyId) {
                         if (value) {
                             jsonString = messageFormatter.FormatMessage(undefined, "agent_found", true, resource);
                             logger.info('agent_found : %s ', jsonString);
+                            redisClient.hset("sticky_agent_map", msg_data.jti, JSON.stringify({
+                                agentId: resource.ResourceInfo.ResourceId,
+                                agentName: resource.ResourceInfo.Profile
+                            }));
                         } else {
                             remove_request(tenantId, companyId, resource.SessionID, 'AgentRejected');
                             jsonString = messageFormatter.FormatMessage(undefined, "agent_found - Fail to send message to Agent", false, resource);
@@ -308,67 +312,84 @@ module.exports.initialize_chat = function (req, res) {
                         };
                         console.log("client_data", client_data);
 
-                        PersonalMessage.find({
-                        $and: [
-                            { $or: [{ from: req.params.CustomerID }, { to: req.params.CustomerID }] },
-                            { data: "Your Request Accepted By Agent!" }
-                        ]
-                        })
-                        .sort({ createdAt: -1 })
-                        .limit(1)
-                        .then(function(docs){
-                        const latest = (Array.isArray(docs) && docs.length > 0) ? docs[0] : null;
-                        console.log("latest",latest);
-                        
-                        const agentId = latest ? latest.agentId : null;
-                        console.log("Latest accepted agentName:", agentId);
-                        
-                        })
-                        .catch(function(err){
-                        console.error("Query failed:", err);
-                        
-                        });
+                        function routeViaArds() {
+                            ards.AddRequest(client_data, function (err, req_data) {
+                                logger.info('initialize_chat AddRequest : %s ', req.body.api_session_id);
+                                logger.info('req_data : %s ', req_data);
+                                var resource = req_data;
+                                try {
+                                    if (req_data && typeof req_data == 'string')
+                                        resource = JSON.parse(req_data);
+                                } catch (ex) {
+                                    console.error(ex);
+                                }
 
-                        ards.AddRequest(client_data, function (err, req_data) {
-
-                            logger.info('initialize_chat AddRequest : %s ', req.body.api_session_id);
-                            logger.info('req_data : %s ', req_data);
-                            var resource = req_data;
-                            try {
-                                if(req_data && typeof req_data == 'string')
-                                    resource = JSON.parse(req_data);
-                            } catch (ex) {
-                                console.error(ex);
-                            }
-
-                            if (resource && resource.ResourceInfo) {
-
-                                //socket_handler.send_message_agent(resource.ResourceInfo.Profile, 'client', session_data.client_data);
-                                init_and_inform_to_agent(resource, tenantId, companyId).then(function (jsonString) {
-                                    logger.info('agent_found -Direct routing  : %s ', jsonString);
+                                if (resource && resource.ResourceInfo) {
+                                    init_and_inform_to_agent(resource, tenantId, companyId).then(function (jsonString) {
+                                        logger.info('agent_found -Direct routing  : %s ', jsonString);
+                                        res.end(jsonString);
+                                    }, function (reason) {
+                                        logger.error('no_agent_found -Direct routing  : %s ', reason);
+                                    });
+                                } else if (resource && (resource.Position !== undefined || resource.QueueName)) {
+                                    jsonString = messageFormatter.FormatMessage(undefined, "processing request", true, {
+                                        status: "queued",
+                                        data: req_data
+                                    });
+                                    logger.info('initialize_chat AddRequest queued (Position: %s) : %s ', resource.Position, jsonString);
                                     res.end(jsonString);
-                                },function (reason) {
-                                    logger.error('no_agent_found -Direct routing  : %s ', reason);
-                                });
+                                } else {
+                                    jsonString = messageFormatter.FormatMessage(undefined, "processing request", false, {
+                                        status: "no_agent_found",
+                                        data: req_data
+                                    });
+                                    logger.info('initialize_chat AddRequest : %s ', jsonString);
+                                    res.end(jsonString);
+                                }
+                            });
+                        }
 
-                            } else if (resource && (resource.Position !== undefined || resource.QueueName)) {
-                                // Request was successfully queued — ARDS will call back via /ARDS/agent_found when an agent is free.
-                                // This happens when agents are online but all concurrency slots are occupied.
-                                jsonString = messageFormatter.FormatMessage(undefined, "processing request", true, {
-                                    status: "queued",
-                                    data: req_data
-                                });
-                                logger.info('initialize_chat AddRequest queued (Position: %s) : %s ', resource.Position, jsonString);
-                                res.end(jsonString);
-                            } else {
-                                jsonString = messageFormatter.FormatMessage(undefined, "processing request", false, {
-                                    status: "no_agent_found",
-                                    data: req_data
-                                });
-                                logger.info('initialize_chat AddRequest : %s ', jsonString);
-                                res.end(jsonString);
+                        redisClient.hget("sticky_agent_map", req.params.CustomerID, function(err, stickyVal) {
+                            if (err || !stickyVal) {
+                                logger.info('initialize_chat no sticky agent in Redis for: %s', req.params.CustomerID);
+                                return routeViaArds();
                             }
 
+                            var sticky;
+                            try { sticky = JSON.parse(stickyVal); } catch (e) { return routeViaArds(); }
+
+                            logger.info('initialize_chat sticky agent from Redis: %s (id: %s)', sticky.agentName, sticky.agentId);
+
+                            socket_handler.isAgentOnline(sticky.agentName).then(function(online) {
+                                if (!online) {
+                                    logger.info('initialize_chat sticky agent offline/busy: %s', sticky.agentName);
+                                    jsonString = messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
+                                        status: "agent_unavailable",
+                                        message: "The agent is busy or unavailable at the moment."
+                                    });
+                                    return res.end(jsonString);
+                                }
+
+                                var stickyResource = {
+                                    SessionID:    req.body.api_session_id,
+                                    ResourceInfo: {
+                                        Profile:      sticky.agentName,
+                                        ResourceName: sticky.agentName,
+                                        ResourceId:   sticky.agentId
+                                    },
+                                    Skills: "ChatSkill"
+                                };
+                                logger.info('initialize_chat routing to sticky agent: %s', sticky.agentName);
+                                init_and_inform_to_agent(stickyResource, tenantId, companyId)
+                                    .then(function(jsonStr) { res.end(jsonStr); })
+                                    .catch(function() {
+                                        jsonString = messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
+                                            status: "agent_unavailable",
+                                            message: "The agent is busy or unavailable at the moment."
+                                        });
+                                        res.end(jsonString);
+                                    });
+                            }).catch(function() { routeViaArds(); });
                         });
                         /*if (engagement) {
                             var client_data = {
