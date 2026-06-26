@@ -29,6 +29,7 @@ var opt = {
 
 var socketio = require('socket.io', opt);
 var io
+var onlineAgents = new Set();
 module.exports.initialize_socket = function (rest_server) {
     io = socketio(rest_server.server);
    // io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
@@ -148,6 +149,8 @@ io.sockets.on('connection', function(socket) {
     logger.info("Client logged " + clientID);
 
     socket.join(clientID);
+    onlineAgents.add(clientID);
+    logger.info('Agent online: %s  (total online: %d)', clientID, onlineAgents.size);
 
     socket.on('authenticate', function (data) {
         logger.info("authenticate received from client ");
@@ -218,7 +221,8 @@ io.sockets.on('connection', function(socket) {
     });
     socket.on('disconnect', function (reason) {
         var ClientID = socket.decoded_token.iss;
-        logger.info("Disconnected " + socket.id + " Reason " + reason);
+        onlineAgents.delete(ClientID);
+        logger.info("Disconnected " + socket.id + " Reason " + reason + " Agent: " + ClientID);
     });
 
     socket.emit('message', "Hello " + socket.decoded_token.iss);
@@ -393,9 +397,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
 };
 
 module.exports.isAgentOnline = function(agentProfile) {
-    return io.in(agentProfile).allSockets().then(function(ids) {
-        return ids.size > 0;
-    });
+    return Promise.resolve(onlineAgents.has(agentProfile));
 };
 
 /*
