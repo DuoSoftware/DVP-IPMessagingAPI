@@ -363,6 +363,22 @@ module.exports.initialize_chat = function (req, res) {
                             socket_handler.isAgentOnline(sticky.agentName).then(function(online) {
                                 if (!online) {
                                     logger.info('initialize_chat sticky agent offline/busy: %s', sticky.agentName);
+                                    var automatedPayload = {
+                                        event_name: 'message',
+                                        body: {
+                                            to:        req.params.CustomerID,
+                                            agent:     sticky.agentId,
+                                            company:   companyId,
+                                            tenant:    tenantId,
+                                            message:   "The agent is busy or unavailable at the moment. Please try again later.",
+                                            type:      'text',
+                                            channel:   req.body.channel,
+                                            sessionId: req.body.api_session_id,
+                                            automated: true
+                                        },
+                                        agent: sticky.agentName
+                                    };
+                                    Common.http_post(req.body.call_back_url, automatedPayload, tenantId, companyId);
                                     jsonString = messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
                                         status: "agent_unavailable",
                                         message: "The agent is busy or unavailable at the moment."
