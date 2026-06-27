@@ -133,6 +133,11 @@ io.sockets.on('connection', function(socket) {
         const decoded = jwt.verify(token, secret.Secret);
         socket.decoded_token = decoded;
 
+        var clientID = decoded.iss;
+        socket.join(clientID);
+        onlineAgents.add(clientID);
+        logger.info('Agent connected and online: %s (total online: %d)', clientID, onlineAgents.size);
+
         // Manually trigger 'authenticated' to mimic socketioJwt.authorize behavior
         socket.emit('authenticated');
         socket.authenticated = true;
@@ -146,11 +151,6 @@ io.sockets.on('connection', function(socket) {
     logger.info("JWT authenticated for clientID: " + socket.decoded_token.iss);
     logger.info("authenticated received");
     var clientID = socket.decoded_token.iss;
-    logger.info("Client logged " + clientID);
-
-    socket.join(clientID);
-    onlineAgents.add(clientID);
-    logger.info('Agent online: %s  (total online: %d)', clientID, onlineAgents.size);
 
     socket.on('authenticate', function (data) {
         logger.info("authenticate received from client ");
