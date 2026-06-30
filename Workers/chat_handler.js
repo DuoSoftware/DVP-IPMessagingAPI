@@ -30,6 +30,7 @@ var create_session_id = function (prefix) {
 // When the sticky agent is offline we ask the customer whether they want to be
 // routed to another available agent. We persist the dialog state in Redis so the
 // customer's NEXT message can be interpreted as their YES / NO answer.
+var REROUTE_DIALOG_ENABLED = false;                      // <-- master switch for the offline reroute dialog feature (currently DISABLED)
 var REROUTE_PENDING_PREFIX = "sticky_reroute_pending:"; // value = {agentName, agentId}; set while awaiting the answer
 var REROUTE_OPTOUT_PREFIX  = "sticky_reroute_optout:";  // value = "1"; set when customer chose to wait for the sticky agent
 var REROUTE_STATE_TTL      = 3600;                       // seconds (1h) for both keys
@@ -446,6 +447,29 @@ module.exports.initialize_chat = function (req, res) {
                                     status: "reroute_prompt",
                                     message: question
                                 }));
+                            }
+
+                            // Feature flag: when the reroute dialog is disabled, fall back to the
+                            // simple behaviour — online => route to sticky agent, offline => busy message.
+                            if (!REROUTE_DIALOG_ENABLED) {
+                                logger.info('[STICKY] reroute dialog DISABLED -> simple availability check for "%s"', sticky.agentName);
+                                logger.info('[STICKY] step3 calling isAgentOnline("%s", tenant=%s, company=%s)', sticky.agentName, tenantId, companyId);
+                                return socket_handler.isAgentOnline(sticky.agentName, tenantId, companyId).then(function(online) {
+                                    logger.info('[STICKY] step4 isAgentOnline("%s") -> %s', sticky.agentName, online);
+                                    if (online) {
+                                        return routeToStickyAgent();
+                                    }
+                                    logger.info('[STICKY] step5-OFFLINE "%s" offline/busy -> sending busy message (dialog disabled)', sticky.agentName);
+                                    sendAutomatedCustomerMessage(req, tenantId, companyId, sticky.agentName, sticky.agentId,
+                                        "The agent is busy or unavailable at the moment. Please try again later.");
+                                    return res.end(messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
+                                        status: "agent_unavailable",
+                                        message: "The agent is busy or unavailable at the moment."
+                                    }));
+                                }).catch(function(e) {
+                                    logger.error('[STICKY] step4-FAIL isAgentOnline("%s") threw -> routeViaArds : %s', sticky.agentName, e);
+                                    routeViaArds();
+                                });
                             }
 
                             // 1) Are we waiting for the customer's YES / NO answer to a previous prompt?
