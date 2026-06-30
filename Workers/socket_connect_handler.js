@@ -127,30 +127,38 @@ module.exports.initialize_socket = function (rest_server) {
 function attachConnectionHandlers(io) {
 io.sockets.on('connection', function(socket) {
     try {
+        logger.info('[PRESENCE][CONNECT] step1 new socket id=%s handshake.auth=%j', socket.id, socket.handshake.auth);
+
         // Extract token from client handshake auth
-        const token = socket.handshake.auth?.token?.split(" ")[1]; // remove "Bearer "
-        logger.info("socket.handshake.auth", socket.handshake.auth);
-        
+        const rawToken = socket.handshake.auth && socket.handshake.auth.token;
+        const token = rawToken ? rawToken.split(" ")[1] : undefined; // remove "Bearer "
+        logger.info('[PRESENCE][CONNECT] step2 rawToken present=%s extractedToken present=%s', !!rawToken, !!token);
+
         if (!token) {
-            console.log("No token provided, disconnecting socket: " + socket.id);
+            logger.error('[PRESENCE][CONNECT] step2-FAIL no token, disconnecting socket id=%s', socket.id);
             return socket.disconnect();
         }
 
         // Verify JWT token
         const decoded = jwt.verify(token, secret.Secret);
         socket.decoded_token = decoded;
+        logger.info('[PRESENCE][CONNECT] step3 JWT verified for socket id=%s decoded=%j', socket.id, decoded);
 
         var clientID = decoded.iss;
+        logger.info('[PRESENCE][CONNECT] step4 clientID(=decoded.iss)="%s" -> THIS is the room name agents are looked up by', clientID);
+
         socket.join(clientID);
         onlineAgents.add(clientID);
-        logger.info('Agent connected and online: %s (total online: %d)', clientID, onlineAgents.size);
+        logger.info('[PRESENCE][CONNECT] step5 joined room "%s" + added to onlineAgents. total online=%d knownAgents=[%s]',
+            clientID, onlineAgents.size, Array.from(onlineAgents).join(', '));
 
         // Manually trigger 'authenticated' to mimic socketioJwt.authorize behavior
         socket.emit('authenticated');
         socket.authenticated = true;
+        logger.info('[PRESENCE][CONNECT] step6 authenticated emitted for room "%s" socket id=%s', clientID, socket.id);
 
     } catch (err) {
-        logger.error("JWT verification failed for socket: " + socket.id, err)
+        logger.error('[PRESENCE][CONNECT] step-FAIL JWT verification failed for socket id=%s : %s', socket.id, err);
         socket.disconnect();
     }
 })
@@ -227,9 +235,10 @@ io.sockets.on('connection', function(socket) {
         });
     });
     socket.on('disconnect', function (reason) {
-        var ClientID = socket.decoded_token.iss;
+        var ClientID = socket.decoded_token && socket.decoded_token.iss;
         onlineAgents.delete(ClientID);
-        logger.info("Disconnected " + socket.id + " Reason " + reason + " Agent: " + ClientID);
+        logger.info('[PRESENCE][DISCONNECT] room "%s" socket id=%s reason=%s. remaining online=%d knownAgents=[%s]',
+            ClientID, socket.id, reason, onlineAgents.size, Array.from(onlineAgents).join(', '));
     });
 
     socket.emit('message', "Hello " + socket.decoded_token.iss);
@@ -339,12 +348,22 @@ attachConnectionHandlers(io);
 module.exports.send_message_agent = function(agent, eventName, message) {
     return new Promise((fulfill, reject) => {
         if (!agent || typeof agent !== "string") {
-        logger.error("Invalid agent value:", agent);
+        logger.error('[PRESENCE][SEND] FAIL invalid agent value: %j', agent);
         return reject(false);
         }
         try {
-            logger.info("Sending message to agent:", agent, "Event:", eventName, "Message payload:", message);
+            logger.info('[PRESENCE][SEND] step1 target room="%s" event="%s"', agent, eventName);
+            // Diagnostic: does the target room actually have any live socket cluster-wide?
+            io.in(agent).allSockets()
+                .then(function(ids) {
+                    logger.info('[PRESENCE][SEND] step1b room "%s" live sockets=%d %s',
+                        agent, (ids && ids.size) || 0,
+                        ((ids && ids.size) || 0) === 0 ? '*** NO SOCKET IN THIS ROOM - emit will reach nobody ***' : '');
+                })
+                .catch(function(e) { logger.error('[PRESENCE][SEND] step1b allSockets error for "%s": %s', agent, e); });
+
             io.to(agent).emit(eventName, message);
+            logger.info('[PRESENCE][SEND] step2 emitted "%s" to room "%s"', eventName, agent);
             let id = uuidv4();
             if (require("mongoose").connection.readyState !== 1) {
             logger.error("MongoDB is not connected!");

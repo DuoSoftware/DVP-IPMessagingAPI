@@ -349,20 +349,26 @@ module.exports.initialize_chat = function (req, res) {
                             });
                         }
 
+                        logger.info('[STICKY] step1 lookup sticky_agent_map for CustomerID="%s"', req.params.CustomerID);
                         redisClient.hget("sticky_agent_map", req.params.CustomerID, function(err, stickyVal) {
                             if (err || !stickyVal) {
-                                logger.info('initialize_chat no sticky agent in Redis for: %s', req.params.CustomerID);
+                                logger.info('[STICKY] step1-NONE no sticky agent (err=%j, val=%j) -> routeViaArds for "%s"', err, stickyVal, req.params.CustomerID);
                                 return routeViaArds();
                             }
 
                             var sticky;
-                            try { sticky = JSON.parse(stickyVal); } catch (e) { return routeViaArds(); }
+                            try { sticky = JSON.parse(stickyVal); } catch (e) {
+                                logger.error('[STICKY] step2-FAIL bad JSON in sticky_agent_map val=%j -> routeViaArds : %s', stickyVal, e);
+                                return routeViaArds();
+                            }
 
-                            logger.info('initialize_chat sticky agent from Redis: %s (id: %s)', sticky.agentName, sticky.agentId);
+                            logger.info('[STICKY] step2 parsed sticky agentName="%s" agentId="%s"', sticky.agentName, sticky.agentId);
+                            logger.info('[STICKY] step3 calling isAgentOnline("%s")', sticky.agentName);
 
                             socket_handler.isAgentOnline(sticky.agentName).then(function(online) {
+                                logger.info('[STICKY] step4 isAgentOnline("%s") -> %s', sticky.agentName, online);
                                 if (!online) {
-                                    logger.info('initialize_chat sticky agent offline/busy: %s', sticky.agentName);
+                                    logger.info('[STICKY] step5-OFFLINE sticky agent "%s" reported offline/busy -> sending automated reply (no ARDS fallback)', sticky.agentName);
                                     var automatedPayload = {
                                         event_name: 'message',
                                         body: {
@@ -395,17 +401,24 @@ module.exports.initialize_chat = function (req, res) {
                                     },
                                     Skills: "ChatSkill"
                                 };
-                                logger.info('initialize_chat routing to sticky agent: %s', sticky.agentName);
+                                logger.info('[STICKY] step5-ONLINE routing chat to sticky agent "%s" (id=%s) via init_and_inform_to_agent', sticky.agentName, sticky.agentId);
                                 init_and_inform_to_agent(stickyResource, tenantId, companyId)
-                                    .then(function(jsonStr) { res.end(jsonStr); })
-                                    .catch(function() {
+                                    .then(function(jsonStr) {
+                                        logger.info('[STICKY] step6 init_and_inform_to_agent resolved for "%s"', sticky.agentName);
+                                        res.end(jsonStr);
+                                    })
+                                    .catch(function(e) {
+                                        logger.error('[STICKY] step6-FAIL init_and_inform_to_agent rejected for "%s" : %s', sticky.agentName, e);
                                         jsonString = messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
                                             status: "agent_unavailable",
                                             message: "The agent is busy or unavailable at the moment."
                                         });
                                         res.end(jsonString);
                                     });
-                            }).catch(function() { routeViaArds(); });
+                            }).catch(function(e) {
+                                logger.error('[STICKY] step4-FAIL isAgentOnline("%s") threw -> routeViaArds : %s', sticky.agentName, e);
+                                routeViaArds();
+                            });
                         });
                         /*if (engagement) {
                             var client_data = {
