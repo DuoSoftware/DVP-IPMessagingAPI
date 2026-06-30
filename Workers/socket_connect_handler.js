@@ -19,6 +19,7 @@ var Common = require("./Common.js");
 var {createAdapter } = require('@socket.io/redis-adapter');
 var redis = require('ioredis');
 var redis_handler = require('./redis_handler.js');
+var redisClient = redis_handler.redisClient; // ioredis client on the configured DB (db 2) holding "{tenant}:{company}:users:online"
 const { v4: uuidv4 } = require("uuid"); 
 var opt = {
     pingTimeout: 60000,
@@ -428,39 +429,55 @@ module.exports.send_message_agent = function(agent, eventName, message) {
     });
 };
 
-module.exports.isAgentOnline = function(agentProfile) {
+/**
+ * Authoritative presence check.
+ *
+ * The platform tracks agent availability in a Redis hash (DB 2) keyed
+ * "{tenant}:{company}:users:online", where each field is an agent's
+ * username/profile and the value is the literal string "online" or "offline".
+ * This is the same source of truth the rest of the system uses, so we check it
+ * directly instead of relying on per-process socket state.
+ *
+ *   HGET "1:12:users:online" "nipmax"  ->  "online" | "offline" | null
+ *
+ * @param {string} agentProfile  agent username / ARDS Profile (e.g. "nipmax")
+ * @param {string|number} tenant
+ * @param {string|number} company
+ * @returns {Promise<boolean>}   true only when the stored status === "online"
+ */
+module.exports.isAgentOnline = function(agentProfile, tenant, company) {
     if (!agentProfile) {
+        logger.info('[PRESENCE] isAgentOnline: empty agentProfile -> false');
         return Promise.resolve(false);
     }
 
-    // Authoritative presence check: ask the same `io` instance that
-    // send_message_agent uses to deliver messages. With the redis adapter,
-    // allSockets() aggregates across every server instance in the cluster,
-    // so an agent connected to ANY node is correctly reported online.
-    // (The old onlineAgents Set was both per-process AND populated on the
-    //  wrong/orphan io instance, so it was always empty here.)
-    try {
-        if (io && typeof io.in === 'function') {
-            return io.in(agentProfile).allSockets()
-                .then(function(socketIds) {
-                    var clusterCount = (socketIds && socketIds.size) || 0;
-                    var inLocalSet = onlineAgents.has(agentProfile);
-                    logger.info('isAgentOnline check for "%s" -> cluster sockets: %d, localSet: %s, knownAgents: [%s]',
-                        agentProfile, clusterCount, inLocalSet, Array.from(onlineAgents).join(', '));
-                    return clusterCount > 0 || inLocalSet;
-                })
-                .catch(function(err) {
-                    logger.error('isAgentOnline allSockets error for %s : %s', agentProfile, err);
-                    return onlineAgents.has(agentProfile);
-                });
-        }
-    } catch (ex) {
-        logger.error('isAgentOnline exception for %s : %s', agentProfile, ex);
+    if (tenant === undefined || tenant === null || company === undefined || company === null) {
+        logger.error('[PRESENCE] isAgentOnline: missing tenant/company (tenant=%s, company=%s) for agent "%s" -> false',
+            tenant, company, agentProfile);
+        return Promise.resolve(false);
     }
 
-    logger.info('isAgentOnline fallback for "%s" -> localSet: %s, knownAgents: [%s]',
-        agentProfile, onlineAgents.has(agentProfile), Array.from(onlineAgents).join(', '));
-    return Promise.resolve(onlineAgents.has(agentProfile));
+    var presenceKey = tenant + ':' + company + ':users:online';
+    logger.info('[PRESENCE] isAgentOnline: HGET key="%s" field="%s"', presenceKey, agentProfile);
+
+    try {
+        return redisClient.hget(presenceKey, agentProfile)
+            .then(function(status) {
+                var online = (status === 'online');
+                logger.info('[PRESENCE] isAgentOnline: key="%s" field="%s" status=%j -> %s',
+                    presenceKey, agentProfile, status, online);
+                return online;
+            })
+            .catch(function(err) {
+                logger.error('[PRESENCE] isAgentOnline: HGET error key="%s" field="%s" : %s',
+                    presenceKey, agentProfile, err);
+                return false;
+            });
+    } catch (ex) {
+        logger.error('[PRESENCE] isAgentOnline: exception key="%s" field="%s" : %s',
+            presenceKey, agentProfile, ex);
+        return Promise.resolve(false);
+    }
 };
 
 /*

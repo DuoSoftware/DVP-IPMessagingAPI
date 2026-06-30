@@ -363,9 +363,9 @@ module.exports.initialize_chat = function (req, res) {
                             }
 
                             logger.info('[STICKY] step2 parsed sticky agentName="%s" agentId="%s"', sticky.agentName, sticky.agentId);
-                            logger.info('[STICKY] step3 calling isAgentOnline("%s")', sticky.agentName);
+                            logger.info('[STICKY] step3 calling isAgentOnline("%s", tenant=%s, company=%s)', sticky.agentName, tenantId, companyId);
 
-                            socket_handler.isAgentOnline(sticky.agentName).then(function(online) {
+                            socket_handler.isAgentOnline(sticky.agentName, tenantId, companyId).then(function(online) {
                                 logger.info('[STICKY] step4 isAgentOnline("%s") -> %s', sticky.agentName, online);
                                 if (!online) {
                                     logger.info('[STICKY] step5-OFFLINE sticky agent "%s" reported offline/busy -> sending automated reply (no ARDS fallback)', sticky.agentName);
