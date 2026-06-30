@@ -13,6 +13,7 @@ var  PersonalMessage = require('./model/personal_message.js');
 require("./mongo_handler");
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var secret = require('dvp-common/Authentication/Secret.js');
+var jwt = require('jsonwebtoken');
 var socketioJwt = require("socketio-jwt");
 var Common = require("./Common.js");
 var {createAdapter } = require('@socket.io/redis-adapter');
@@ -34,6 +35,11 @@ module.exports.initialize_socket = function (rest_server) {
     io = socketio(rest_server.server);
    // io.adapter(adapter({pubClient: redis_handler.pubclient, subClient: redis_handler.subclient}));
    io.adapter(createAdapter (redis_handler.pubclient, redis_handler.subclient));
+   // The connection handler at module load bound to the throwaway port-4000 io
+   // instance. Agents actually connect to this adapter-backed io (the one used by
+   // send_message_agent), so the connection/presence handler MUST be attached here
+   // too, otherwise onlineAgents never gets populated and isAgentOnline is always false.
+   attachConnectionHandlers(io);
 };
 
 
@@ -118,6 +124,7 @@ module.exports.initialize_socket = function (rest_server) {
 //     secret: secret.Secret,
 //     timeout: 15000 // 15 seconds to send the authentication message
 // }))
+function attachConnectionHandlers(io) {
 io.sockets.on('connection', function(socket) {
     try {
         // Extract token from client handshake auth
@@ -248,6 +255,12 @@ io.sockets.on('connection', function(socket) {
         io.in(agent).emit("client", client_data);
     }*/
 });
+}
+
+// Attach to the module-load io instance as well (covers any agents that connect
+// to the externalport socket server). The adapter-backed io is wired in
+// initialize_socket() once it exists.
+attachConnectionHandlers(io);
 
 // module.exports.send_message_agent = function (agent, eventName, message) {
 
@@ -397,6 +410,32 @@ module.exports.send_message_agent = function(agent, eventName, message) {
 };
 
 module.exports.isAgentOnline = function(agentProfile) {
+    if (!agentProfile) {
+        return Promise.resolve(false);
+    }
+
+    // Authoritative presence check: ask the same `io` instance that
+    // send_message_agent uses to deliver messages. With the redis adapter,
+    // allSockets() aggregates across every server instance in the cluster,
+    // so an agent connected to ANY node is correctly reported online.
+    // (The old onlineAgents Set was both per-process AND populated on the
+    //  wrong/orphan io instance, so it was always empty here.)
+    try {
+        if (io && typeof io.in === 'function') {
+            return io.in(agentProfile).allSockets()
+                .then(function(socketIds) {
+                    var online = !!(socketIds && socketIds.size > 0);
+                    return online || onlineAgents.has(agentProfile);
+                })
+                .catch(function(err) {
+                    logger.error('isAgentOnline allSockets error for %s : %s', agentProfile, err);
+                    return onlineAgents.has(agentProfile);
+                });
+        }
+    } catch (ex) {
+        logger.error('isAgentOnline exception for %s : %s', agentProfile, ex);
+    }
+
     return Promise.resolve(onlineAgents.has(agentProfile));
 };
 
