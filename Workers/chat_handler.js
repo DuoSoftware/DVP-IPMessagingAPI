@@ -26,6 +26,47 @@ var create_session_id = function (prefix) {
     return util.format("%s-%s", prefix,reqId);
 };
 
+// ---------------- Sticky-agent reroute dialog ----------------
+// When the sticky agent is offline we ask the customer whether they want to be
+// routed to another available agent. We persist the dialog state in Redis so the
+// customer's NEXT message can be interpreted as their YES / NO answer.
+var REROUTE_PENDING_PREFIX = "sticky_reroute_pending:"; // value = {agentName, agentId}; set while awaiting the answer
+var REROUTE_OPTOUT_PREFIX  = "sticky_reroute_optout:";  // value = "1"; set when customer chose to wait for the sticky agent
+var REROUTE_STATE_TTL      = 3600;                       // seconds (1h) for both keys
+
+// Interpret a free-text customer reply as yes / no / unclear.
+var interpretRerouteChoice = function (msg) {
+    if (!msg) return 'unclear';
+    var m = String(msg).trim().toLowerCase();
+    if (!m) return 'unclear';
+    var first = m.split(/\s+/)[0].replace(/[^a-z]/g, '');
+    if (['yes', 'y', 'yeah', 'yep', 'ya', 'sure', 'ok', 'okay'].indexOf(first) >= 0) return 'yes';
+    if (['no', 'n', 'nope', 'nah'].indexOf(first) >= 0) return 'no';
+    if (m.indexOf('another') >= 0 || m.indexOf('other agent') >= 0 || m.indexOf('available agent') >= 0) return 'yes';
+    if (m.indexOf('same agent') >= 0 || m.indexOf('my agent') >= 0 || m.indexOf('sticky') >= 0 || m.indexOf('wait') >= 0) return 'no';
+    return 'unclear';
+};
+
+// Push an automated message back to the customer over their callback URL.
+var sendAutomatedCustomerMessage = function (req, tenantId, companyId, agentName, agentId, text) {
+    var payload = {
+        event_name: 'message',
+        body: {
+            to:        req.params.CustomerID,
+            agent:     agentId,
+            company:   companyId,
+            tenant:    tenantId,
+            message:   text,
+            type:      'text',
+            channel:   req.body.channel,
+            sessionId: req.body.api_session_id,
+            automated: true
+        },
+        agent: agentName
+    };
+    Common.http_post(req.body.call_back_url, payload, tenantId, companyId);
+};
+
 var registred_clinet = function (data) {
     var jsonString;
     try{
@@ -363,35 +404,12 @@ module.exports.initialize_chat = function (req, res) {
                             }
 
                             logger.info('[STICKY] step2 parsed sticky agentName="%s" agentId="%s"', sticky.agentName, sticky.agentId);
-                            logger.info('[STICKY] step3 calling isAgentOnline("%s", tenant=%s, company=%s)', sticky.agentName, tenantId, companyId);
 
-                            socket_handler.isAgentOnline(sticky.agentName, tenantId, companyId).then(function(online) {
-                                logger.info('[STICKY] step4 isAgentOnline("%s") -> %s', sticky.agentName, online);
-                                if (!online) {
-                                    logger.info('[STICKY] step5-OFFLINE sticky agent "%s" reported offline/busy -> sending automated reply (no ARDS fallback)', sticky.agentName);
-                                    var automatedPayload = {
-                                        event_name: 'message',
-                                        body: {
-                                            to:        req.params.CustomerID,
-                                            agent:     sticky.agentId,
-                                            company:   companyId,
-                                            tenant:    tenantId,
-                                            message:   "The agent is busy or unavailable at the moment. Please try again later.",
-                                            type:      'text',
-                                            channel:   req.body.channel,
-                                            sessionId: req.body.api_session_id,
-                                            automated: true
-                                        },
-                                        agent: sticky.agentName
-                                    };
-                                    Common.http_post(req.body.call_back_url, automatedPayload, tenantId, companyId);
-                                    jsonString = messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
-                                        status: "agent_unavailable",
-                                        message: "The agent is busy or unavailable at the moment."
-                                    });
-                                    return res.end(jsonString);
-                                }
+                            var pendingKey = REROUTE_PENDING_PREFIX + req.params.CustomerID;
+                            var optoutKey  = REROUTE_OPTOUT_PREFIX + req.params.CustomerID;
 
+                            // Route this chat to the sticky agent (agent confirmed online).
+                            function routeToStickyAgent() {
                                 var stickyResource = {
                                     SessionID:    req.body.api_session_id,
                                     ResourceInfo: {
@@ -401,23 +419,91 @@ module.exports.initialize_chat = function (req, res) {
                                     },
                                     Skills: "ChatSkill"
                                 };
-                                logger.info('[STICKY] step5-ONLINE routing chat to sticky agent "%s" (id=%s) via init_and_inform_to_agent', sticky.agentName, sticky.agentId);
+                                logger.info('[STICKY] routing chat to sticky agent "%s" (id=%s)', sticky.agentName, sticky.agentId);
                                 init_and_inform_to_agent(stickyResource, tenantId, companyId)
                                     .then(function(jsonStr) {
-                                        logger.info('[STICKY] step6 init_and_inform_to_agent resolved for "%s"', sticky.agentName);
+                                        logger.info('[STICKY] sticky route resolved for "%s"', sticky.agentName);
                                         res.end(jsonStr);
                                     })
                                     .catch(function(e) {
-                                        logger.error('[STICKY] step6-FAIL init_and_inform_to_agent rejected for "%s" : %s', sticky.agentName, e);
-                                        jsonString = messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
+                                        logger.error('[STICKY] sticky route failed for "%s" : %s', sticky.agentName, e);
+                                        res.end(messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
                                             status: "agent_unavailable",
                                             message: "The agent is busy or unavailable at the moment."
-                                        });
-                                        res.end(jsonString);
+                                        }));
                                     });
-                            }).catch(function(e) {
-                                logger.error('[STICKY] step4-FAIL isAgentOnline("%s") threw -> routeViaArds : %s', sticky.agentName, e);
-                                routeViaArds();
+                            }
+
+                            // Ask the customer whether they want another agent (and remember we asked).
+                            function askRerouteQuestion() {
+                                redisClient.set(pendingKey, JSON.stringify({ agentName: sticky.agentName, agentId: sticky.agentId }), 'EX', REROUTE_STATE_TTL);
+                                var question = "Your previous conversation was handled by " + sticky.agentName +
+                                    ", who is currently offline/busy. Would you like to be connected to another available agent? " +
+                                    "Reply YES to chat with another agent, or NO to stay with " + sticky.agentName + ".";
+                                logger.info('[STICKY] step5-OFFLINE "%s" offline -> asking reroute question to "%s"', sticky.agentName, req.params.CustomerID);
+                                sendAutomatedCustomerMessage(req, tenantId, companyId, sticky.agentName, sticky.agentId, question);
+                                res.end(messageFormatter.FormatMessage(undefined, "initialize_chat", true, {
+                                    status: "reroute_prompt",
+                                    message: question
+                                }));
+                            }
+
+                            // 1) Are we waiting for the customer's YES / NO answer to a previous prompt?
+                            redisClient.get(pendingKey, function(errP, pendingVal) {
+                                if (pendingVal) {
+                                    var choice = interpretRerouteChoice(req.body.message);
+                                    logger.info('[STICKY] step3 pending reroute answer for "%s": message=%j -> choice=%s', req.params.CustomerID, req.body.message, choice);
+
+                                    if (choice === 'yes') {
+                                        redisClient.del(pendingKey);
+                                        redisClient.del(optoutKey);
+                                        sendAutomatedCustomerMessage(req, tenantId, companyId, sticky.agentName, sticky.agentId,
+                                            "Connecting you to the next available agent. Please hold on.");
+                                        logger.info('[STICKY] step3-YES rerouting "%s" to next available agent via ARDS', req.params.CustomerID);
+                                        return routeViaArds(); // new agent becomes the sticky agent on agent_found
+                                    }
+                                    if (choice === 'no') {
+                                        redisClient.del(pendingKey);
+                                        redisClient.set(optoutKey, "1", 'EX', REROUTE_STATE_TTL);
+                                        logger.info('[STICKY] step3-NO keeping "%s" with sticky agent "%s"', req.params.CustomerID, sticky.agentName);
+                                        sendAutomatedCustomerMessage(req, tenantId, companyId, sticky.agentName, sticky.agentId,
+                                            "No problem. We'll keep you connected with " + sticky.agentName + ". They will respond as soon as they are available.");
+                                        return res.end(messageFormatter.FormatMessage(undefined, "initialize_chat", true, {
+                                            status: "sticky_retained",
+                                            message: "Kept with sticky agent."
+                                        }));
+                                    }
+                                    // Unclear answer -> ask again.
+                                    logger.info('[STICKY] step3-UNCLEAR re-asking reroute question for "%s"', req.params.CustomerID);
+                                    return askRerouteQuestion();
+                                }
+
+                                // 2) No pending answer -> check the sticky agent's real availability.
+                                logger.info('[STICKY] step3 calling isAgentOnline("%s", tenant=%s, company=%s)', sticky.agentName, tenantId, companyId);
+                                socket_handler.isAgentOnline(sticky.agentName, tenantId, companyId).then(function(online) {
+                                    logger.info('[STICKY] step4 isAgentOnline("%s") -> %s', sticky.agentName, online);
+                                    if (online) {
+                                        redisClient.del(optoutKey); // agent is back; clear any earlier "wait" choice
+                                        return routeToStickyAgent();
+                                    }
+
+                                    // Offline/busy. If the customer already chose to wait, just remind them (don't re-ask).
+                                    redisClient.get(optoutKey, function(errO, optedOut) {
+                                        if (optedOut) {
+                                            logger.info('[STICKY] step5-OFFLINE "%s" offline and customer opted to wait -> reminder only', sticky.agentName);
+                                            sendAutomatedCustomerMessage(req, tenantId, companyId, sticky.agentName, sticky.agentId,
+                                                sticky.agentName + " is still offline/busy. We'll keep you connected and they'll respond once available.");
+                                            return res.end(messageFormatter.FormatMessage(undefined, "initialize_chat", false, {
+                                                status: "agent_unavailable",
+                                                message: "Sticky agent still offline."
+                                            }));
+                                        }
+                                        return askRerouteQuestion();
+                                    });
+                                }).catch(function(e) {
+                                    logger.error('[STICKY] step4-FAIL isAgentOnline("%s") threw -> routeViaArds : %s', sticky.agentName, e);
+                                    routeViaArds();
+                                });
                             });
                         });
                         /*if (engagement) {
