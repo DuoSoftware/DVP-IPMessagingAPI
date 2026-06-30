@@ -424,8 +424,11 @@ module.exports.isAgentOnline = function(agentProfile) {
         if (io && typeof io.in === 'function') {
             return io.in(agentProfile).allSockets()
                 .then(function(socketIds) {
-                    var online = !!(socketIds && socketIds.size > 0);
-                    return online || onlineAgents.has(agentProfile);
+                    var clusterCount = (socketIds && socketIds.size) || 0;
+                    var inLocalSet = onlineAgents.has(agentProfile);
+                    logger.info('isAgentOnline check for "%s" -> cluster sockets: %d, localSet: %s, knownAgents: [%s]',
+                        agentProfile, clusterCount, inLocalSet, Array.from(onlineAgents).join(', '));
+                    return clusterCount > 0 || inLocalSet;
                 })
                 .catch(function(err) {
                     logger.error('isAgentOnline allSockets error for %s : %s', agentProfile, err);
@@ -436,6 +439,8 @@ module.exports.isAgentOnline = function(agentProfile) {
         logger.error('isAgentOnline exception for %s : %s', agentProfile, ex);
     }
 
+    logger.info('isAgentOnline fallback for "%s" -> localSet: %s, knownAgents: [%s]',
+        agentProfile, onlineAgents.has(agentProfile), Array.from(onlineAgents).join(', '));
     return Promise.resolve(onlineAgents.has(agentProfile));
 };
 
