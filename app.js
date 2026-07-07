@@ -35,7 +35,7 @@ var jwt = require('restify-jwt');
 var secret = require('dvp-common/Authentication/Secret.js');
 var authorization = require('dvp-common/Authentication/Authorization.js');
 const { logger } = require('dvp-common/LogHandler/CommonLogHandler');
-RestServer.use(jwt({secret: secret.Secret}));
+RestServer.use(jwt({secret: secret.Secret}).unless({path: ['/health/live']}));
 // ---------------- Security -------------------------- \\
 
 //Server listen
@@ -44,6 +44,11 @@ RestServer.listen(port, function () {
 });
 
 //------------------------- End Restify Server ------------------------- \\
+
+RestServer.get("/health/live", function (req, res, next) {
+    res.send(200, "live");
+    return next();
+});
 
 RestServer.post('/DVP/API/' + version + '/IPMessengerAPI/Chats', authorization({
     resource: "attribute",
