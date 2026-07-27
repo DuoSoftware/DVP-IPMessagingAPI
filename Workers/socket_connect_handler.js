@@ -128,7 +128,7 @@ module.exports.initialize_socket = function (rest_server) {
 function attachConnectionHandlers(io) {
 io.sockets.on('connection', function(socket) {
     try {
-        logger.info('[PRESENCE][CONNECT] step1 new socket id=%s handshake.auth=%j', socket.id, socket.handshake.auth);
+        logger.info('[PRESENCE][CONNECT] step1 new socket id=%s', socket.id);
 
         // Extract token from client handshake auth
         const rawToken = socket.handshake.auth && socket.handshake.auth.token;
@@ -143,7 +143,7 @@ io.sockets.on('connection', function(socket) {
         // Verify JWT token
         const decoded = jwt.verify(token, secret.Secret);
         socket.decoded_token = decoded;
-        logger.info('[PRESENCE][CONNECT] step3 JWT verified for socket id=%s decoded=%j', socket.id, decoded);
+        logger.info('[PRESENCE][CONNECT] step3 JWT verified for socket id=%s', socket.id);
 
         var clientID = decoded.iss;
         logger.info('[PRESENCE][CONNECT] step4 clientID(=decoded.iss)="%s" -> THIS is the room name agents are looked up by', clientID);
@@ -164,39 +164,34 @@ io.sockets.on('connection', function(socket) {
     }
 })
 .on('authenticated', function (socket) {
-    logger.info("JWT authenticated for clientID: " + socket.decoded_token.iss);
-    logger.info("authenticated received");
+    logger.info('[SOCKET] authenticated event for clientID=%s', socket.decoded_token.iss);
     var clientID = socket.decoded_token.iss;
 
     socket.on('authenticate', function (data) {
-        logger.info("authenticate received from client ");
-        logger.info("authenticate  : " + JSON.stringify(data));
+        logger.info('[SOCKET] authenticate received from client');
     });
 
     socket.on('accept', function (data) {
-        logger.info("accept  received from client ");
-        logger.info("accept  : " + JSON.stringify(data));
+        logger.info('[SOCKET] accept received from client');
     });
 
     socket.on('reply', function (data) {
-        logger.info("Reply received from client ");
-        logger.info("Reply  : " + JSON.stringify(data));
         var clientTopic = data.Tkey;
-        logger.info("Token key from Client " + clientTopic);
+        logger.info('[SOCKET] reply received from client, token key=%s', clientTopic);
         redisManager.ResponseUrlPicker(clientTopic, TTL, function (errURL, resURL) {
 
             if (errURL) {
-                logger.error("Error in searching URL ", errURL);
+                logger.error('[SOCKET] reply: error searching URL: %s', errURL);
             }
             else {
                 if (!resURL || resURL == null || resURL == "") {
-                    logger.error("Invalid URL records found", resURL);
+                    logger.error('[SOCKET] reply: invalid URL records found');
                 }
                 else {
                     var direction = resURL[0];
                     var URL = resURL[1];
                     var reference = resURL[2];
-                    logger.info("URL" + URL, "Direction " + direction, "Reference " + reference);
+                    logger.info('[SOCKET] reply: resolved direction=%s reference=%s', direction, reference);
 
                     if (direction == "STATELESS") {
 
@@ -210,24 +205,23 @@ io.sockets.on('connection', function(socket) {
                                 //Ref:Refs[clientTopic]
                             };
 
-                            logger.info("Reply to sender .... " + JSON.stringify(replyObj));
+                            logger.info('[SOCKET] reply: forwarding to sender URL=%s', URL);
                             var optionsX = {url: URL, method: "POST", json: replyObj};
                             httpReq(optionsX, function (errorX, responseX, dataX) {
 
                                 if (errorX) {
-                                    logger.error("Error sending request ", errorX);
+                                    logger.error('[SOCKET] reply: error sending request: %s', errorX);
                                 }
                                 else if (!errorX && responseX != undefined) {
-                                    logger.info("Sent" + data + " To " + URL);
+                                    logger.info('[SOCKET] reply: sent to URL=%s', URL);
                                 }
                                 else {
-                                    logger.info("No response from " + URL);
-                                    
+                                    logger.info('[SOCKET] reply: no response from URL=%s', URL);
                                 }
                             });
                         }
                         else {
-                            logger.error("Invalid URL found " + resURL);
+                            logger.error('[SOCKET] reply: invalid URL found');
                         }
                     }
 
@@ -367,11 +361,9 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             logger.info('[PRESENCE][SEND] step2 emitted "%s" to room "%s"', eventName, agent);
             let id = uuidv4();
             if (require("mongoose").connection.readyState !== 1) {
-            logger.error("MongoDB is not connected!");
+            logger.error('[PRESENCE][SEND] FAIL MongoDB not connected');
             return reject(false);
             }
-
-            console.log("Message to be saved to MongoDB:", message);
 
             const messageData = {
                 type: message.type || "text",
@@ -396,17 +388,15 @@ module.exports.send_message_agent = function(agent, eventName, message) {
                 BusinessUnit: message.BusinessUnit || "default",
                 name: message.name || ""
             };
-            console.log("messageData",messageData);
-
             const saveMessage = (resolvedName) => {
                 messageData.name = resolvedName;
                 PersonalMessage.create(messageData)
                     .then(doc => {
-                        logger.info("Message saved successfully to MongoDB:", doc);
+                        logger.info('[PRESENCE][SEND] step3 message saved to MongoDB uuid=%s', id);
                         fulfill(true);
                     })
                     .catch(err => {
-                        logger.error("Failed to save message to MongoDB:", err);
+                        logger.error('[PRESENCE][SEND] FAIL saving message to MongoDB: %s', err);
                         reject(false);
                     });
             };
@@ -423,7 +413,7 @@ module.exports.send_message_agent = function(agent, eventName, message) {
             }
             
         } catch (err) {
-            logger.error("Unexpected error sending message to agent:", agent, err);
+            logger.error('[PRESENCE][SEND] FAIL unexpected error for room="%s": %s', agent, err);
             reject(false);
         }
     });

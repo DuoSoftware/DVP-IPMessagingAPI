@@ -22,7 +22,7 @@ var server_id = "CHATSERVER";
 var httpPost = function (companyInfo, serviceUrl, postData, callback) {
     var jsonStr = JSON.stringify(postData);
     var accessToken = util.format("bearer %s", config.Host.token);
-    logger.info('HTTP POST Request:: %s', serviceUrl);
+    logger.info('[ARDS] POST %s', serviceUrl);
     var options = {
         url: serviceUrl,
         method: 'POST',
@@ -36,9 +36,8 @@ var httpPost = function (companyInfo, serviceUrl, postData, callback) {
     try {
         request.post(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                logger.error('upload failed:', err);
+                logger.error('[ARDS] POST failed:', err);
             }
-            logger.info('Server returned: %j', body);
             callback(err, httpResponse, body);
         });
     }catch(ex){
@@ -49,7 +48,7 @@ var httpPost = function (companyInfo, serviceUrl, postData, callback) {
 var httpPut = function (companyInfo, serviceUrl, postData, callback) {
     var jsonStr = JSON.stringify(postData);
     var accessToken = util.format("bearer %s", config.Host.token);
-    logger.info('HTTP PUT Request:: %s', serviceUrl);
+    logger.info('[ARDS] PUT %s', serviceUrl);
     var options = {
         url: serviceUrl,
         method: 'PUT',
@@ -63,9 +62,8 @@ var httpPut = function (companyInfo, serviceUrl, postData, callback) {
     try {
         request.put(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                logger.error('upload failed:', err);
+                logger.error('[ARDS] PUT failed:', err);
             }
-            logger.info('Server returned: %j', body)
             callback(err, httpResponse, body);
         });
     }catch(ex){
@@ -75,7 +73,7 @@ var httpPut = function (companyInfo, serviceUrl, postData, callback) {
 
 var httpGet = function (companyInfo, serviceUrl, callback) {
     var accessToken = util.format("bearer %s", config.Host.token);
-    logger.info('HTTP GET Request:: %s', serviceUrl);
+    logger.info('[ARDS] GET %s', serviceUrl);
     var options = {
         url: serviceUrl,
         headers: {
@@ -87,9 +85,8 @@ var httpGet = function (companyInfo, serviceUrl, callback) {
     try {
         request(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                logger.error('upload failed:', err);
+                logger.error('[ARDS] GET failed:', err);
             }
-            logger.info('Server returned: %j', body);
             callback(err, httpResponse, body);
         });
     }catch(ex) {
@@ -99,7 +96,7 @@ var httpGet = function (companyInfo, serviceUrl, callback) {
 
 var httpDelete = function (companyInfo, serviceUrl, callback) {
     var accessToken = util.format("bearer %s", config.Host.token);
-    logger.info('HTTP DELETE Request:: %s', serviceUrl);
+    logger.info('[ARDS] DELETE %s', serviceUrl);
     var options = {
         url: serviceUrl,
         method: 'DELETE',
@@ -112,9 +109,8 @@ var httpDelete = function (companyInfo, serviceUrl, callback) {
     try {
         request(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                logger.error('upload failed:', err);
+                logger.error('[ARDS] DELETE failed:', err);
             }
-            logger.info('Server returned: %j', body);
             callback(err, httpResponse, body);
         });
     }catch(ex) {
@@ -154,17 +150,17 @@ var RegisterChatArdsClient = function(){
         var companyInfo = util.format("%d:%d", -1, -1);
         httpPost(companyInfo, ardsReqServerUrl, reqBody, function (err, res1, result) {
             if(err){
-                logger.error("DVP-IPMessagingAPI.RegisterChatArdsClient:: Error::"+ err);
+                logger.error("[ARDS] RegisterChatArdsClient error: " + err);
             }else{
                 if(res1.statusCode === 200) {
-                    logger.info("DVP-IPMessagingAPI.RegisterChatArdsClient:: Success");
+                    logger.info("[ARDS] RegisterChatArdsClient success");
                 }else{
-                    logger.info("DVP-IPMessagingAPI.RegisterChatArdsClient:: Failed");
+                    logger.error("[ARDS] RegisterChatArdsClient failed, status " + res1.statusCode);
                 }
             }
         });
     }catch(ex){
-        logger.error("DVP-IPMessagingAPI.RegisterChatArdsClient:: Exception::"+ ex);
+        logger.error("[ARDS] RegisterChatArdsClient exception: " + ex);
     }
 };
 
@@ -178,24 +174,24 @@ var RemoveArdsRequest = function (tenant, company, sessionId, reason, callback) 
         var companyInfo = util.format("%d:%d", tenant, company);
         httpDelete(companyInfo, ardsReqServerUrl, function (err, res1, result) {
             if(err){
-                logger.error("DVP-IPMessagingAPI.RemoveArdsRequest:: Error::"+ err);
+                logger.error("[ARDS] RemoveArdsRequest error: " + err);
                 callback(err, undefined);
             }else{
                 if(res1.statusCode === 200) {
-                    logger.info("DVP-IPMessagingAPI.RemoveArdsRequest:: Success");
+                    logger.info("[ARDS] RemoveArdsRequest success, session " + sessionId);
                     if(result && result !== "No matching resources at the moment") {
                         callback(undefined, JSON.parse(result));
                     }else{
                         callback(undefined, undefined);
                     }
                 }else{
-                    logger.info("DVP-IPMessagingAPI.RemoveArdsRequest:: Failed");
+                    logger.error("[ARDS] RemoveArdsRequest failed, status " + res1.statusCode);
                     callback(undefined, undefined);
                 }
             }
         });
     }catch(ex){
-        logger.error("DVP-IPMessagingAPI.RemoveArdsRequest:: Exception::"+ ex);
+        logger.error("[ARDS] RemoveArdsRequest exception: " + ex);
         callback(ex, undefined);
     }
 };
@@ -254,16 +250,16 @@ var AddRequest = function (req_data, callback) {
         var companyInfo = util.format("%d:%d", tenant, company);
         httpPost(companyInfo, ardsReqServerUrl, reqBody, function (err, res1, result) {
             if(err){
-                logger.error("DVP-IPMessagingAPI.PickResource:: Error::"+ err);
+                logger.error("[ARDS] AddRequest error: " + err);
                 callback(err, undefined);
             }else{
 
                 if(res1.statusCode === 200) {
-                    logger.info("DVP-IPMessagingAPI.PickResource:: Success");
+                    logger.info("[ARDS] AddRequest success, session " + sessionId);
                     var response = JSON.parse(result);
                     callback(undefined, response.Result);
                 }else{
-                    logger.info("DVP-IPMessagingAPI.PickResource:: Failed");
+                    logger.error("[ARDS] AddRequest failed, status " + res1.statusCode);
                     callback(undefined, undefined);
                 }
 
@@ -283,7 +279,7 @@ var AddRequest = function (req_data, callback) {
             }
         });
     }catch(ex){
-        logger.error("DVP-IPMessagingAPI.PickResource:: Exception::"+ ex);
+        logger.error("[ARDS] AddRequest exception: " + ex);
         callback(ex, undefined);
     }
 };
@@ -291,8 +287,6 @@ var AddRequest = function (req_data, callback) {
 var UpdateResource = function(tenant, company, sessionId, resourceId, state, otherInfo, reason, direction) {
     try {
         if(sessionId && company && tenant && resourceId) {
-
-            logger.debug('[DVP-IPMessagingAPI.SendResourceStatus] -  Creating PUT Message');
 
             var companyInfo = util.format("%d:%d", tenant, company);
 
@@ -322,25 +316,25 @@ var UpdateResource = function(tenant, company, sessionId, resourceId, state, oth
 
                 httpPut(companyInfo, httpUrl, jsonObj, function (err, res1, result) {
                     if(err){
-                        logger.error('[DVP-IPMessagingAPI.SendResourceStatus] - Set Resource Status Fail - Error : [%s]', err);
+                        logger.error('[ARDS] UpdateResource error: %s', err);
                     }else{
                         if(res1.statusCode === 200) {
-                            logger.debug('[DVP-IPMessagingAPI.SendResourceStatus] - Set Resource Status Success : %s', result);
+                            logger.info('[ARDS] UpdateResource success, session %s', sessionId);
                         }else{
-                            logger.error('[DVP-IPMessagingAPI.SendResourceStatus] - Set Resource Status Fail - Response : [%s]', JSON.stringify(res1));
+                            logger.error('[ARDS] UpdateResource failed, status %s', res1.statusCode);
                         }
                     }
                 });
 
             } else {
-                logger.error('[DVP-IPMessagingAPI.SendResourceStatus] - ARDS Endpoints not defined', new Error('ARDS Endpoints not defined'));
+                logger.error('[ARDS] UpdateResource ARDS endpoints not defined');
             }
 
 
         }
 
     } catch(ex) {
-        logger.error('[DVP-IPMessagingAPI.SendResourceStatus] - Exception Occurred', ex);
+        logger.error('[ARDS] UpdateResource exception: ' + ex);
     }
 };
 
@@ -359,13 +353,13 @@ var GetOngoingSessions = function (tenant, company, resourceId, callback) {
 
         httpGet(companyInfo, ardsResourceUrl, function (err, res1, result) {
             if(err){
-                logger.error("DVP-IPMessagingAPI.GetOngoingSessions:: Error::"+ err);
+                logger.error("[ARDS] GetOngoingSessions error: " + err);
                 callback(err, ongoingSessions);
             }else{
 
                 if(res1.statusCode === 200) {
 
-                    logger.info("DVP-IPMessagingAPI.GetOngoingSessions:: Success");
+                    logger.info("[ARDS] GetOngoingSessions success, resource " + resourceId);
 
                     if(result) {
                         var response = JSON.parse(result);
@@ -398,7 +392,7 @@ var GetOngoingSessions = function (tenant, company, resourceId, callback) {
 
                 }else{
 
-                    logger.info("DVP-IPMessagingAPI.GetOngoingSessions:: Failed");
+                    logger.error("[ARDS] GetOngoingSessions failed, status " + res1.statusCode);
                     callback(undefined, ongoingSessions);
 
                 }
@@ -407,7 +401,7 @@ var GetOngoingSessions = function (tenant, company, resourceId, callback) {
         });
 
     }catch(ex){
-        logger.error("DVP-IPMessagingAPI.GetOngoingSessions:: Exception::"+ ex);
+        logger.error("[ARDS] GetOngoingSessions exception: " + ex);
         callback(ex, ongoingSessions);
     }
 };

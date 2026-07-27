@@ -55,7 +55,7 @@ if (redismode == 'sentinel') {
 
         } else {
 
-            console.log("No enough sentinel servers found .........");
+            logger.error("[REDIS] Not enough sentinel servers found");
         }
 
     }
@@ -168,7 +168,7 @@ module.exports.CreateEngagement = function (payload, cb) {
             engagementData.raw = payload.Contact;
         }
 
-        logger.debug("Calling Engagement service URL %s", engagementURL);
+        logger.info("[ENGAGE] POST %s", engagementURL);
         request({
             method: "POST",
             url: engagementURL,
@@ -190,12 +190,12 @@ module.exports.CreateEngagement = function (payload, cb) {
                         profile = _response.body.Result.profile_id;
                     }
 
-
+                    logger.info("[ENGAGE] Engagement created, profile %s", profile);
                     return cb(null, profile);
 
                 } else {
 
-                    logger.error("There is an error in  create engagements for this session " + payload.jit);
+                    logger.error("[ENGAGE] Failed to create engagement for session %s", payload.jti);
                     //done(new Error('engagement_failed'));
                     return cb(_error,null);
 
@@ -228,17 +228,15 @@ module.exports.CreateEngagement = function (payload, cb) {
 module.exports.DecryptMessages = function (messages) {
     try {
         return messages.map(function (item) {
-            console.log("Decrypting message item:", item);
-            
             if (item.data && typeof item.data === 'string') {
                 item.data = crypto_handler.Decrypt(item.data);
             } else {
-                console.error("Invalid message data:", item);
+                logger.error("[DECRYPT] Invalid message data");
             }
             return item;
         });
     } catch (ex) {
-        console.error("Error in DecryptMessages:", ex);
+        logger.error("[DECRYPT] Error decrypting messages:", ex);
         return messages;  // Return original messages if error occurs
     }
 };
@@ -248,7 +246,7 @@ module.exports.http_post = function (serviceUrl,postData,tenant,company) {
 
     var jsonStr = JSON.stringify(postData);
     var accessToken = util.format("bearer %s", config.Host.token);
-    console.log('HTTP POST Request:: %s', serviceUrl);
+    logger.info('[HTTP] POST %s', serviceUrl);
     var options = {
         url: serviceUrl,
         method: 'POST',
@@ -263,7 +261,7 @@ module.exports.http_post = function (serviceUrl,postData,tenant,company) {
     return new Promise(function (fulfill, reject) {
        request.post(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
-                console.log('upload failed:', err);
+                logger.error('[HTTP] POST failed:', err);
                 // Never reject with null: an unhandled null rejection crashes restify's
                 // domain error handler (err._restify_next on null).
                 reject(err instanceof Error ? err : new Error('http_post request failed: ' + err));
@@ -272,6 +270,7 @@ module.exports.http_post = function (serviceUrl,postData,tenant,company) {
                 fulfill(body)
             }
             else {
+                logger.error('[HTTP] POST non-200 status %s', httpResponse && httpResponse.statusCode);
                 reject(new Error('http_post non-200 status: ' + (httpResponse && httpResponse.statusCode)));
             }
         });
