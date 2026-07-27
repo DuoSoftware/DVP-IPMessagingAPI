@@ -393,14 +393,32 @@ module.exports.initialize_chat = function (req, res) {
 
                         logger.info('[STICKY] step1 lookup sticky_agent_map for CustomerID="%s"', req.params.CustomerID);
                         redisClient.hget("sticky_agent_map", req.params.CustomerID, function(err, stickyVal) {
-                            if (err || !stickyVal) {
-                                logger.info('[STICKY] step1-NONE no sticky agent (err=%j, val=%j) -> routeViaArds for "%s"', err, stickyVal, req.params.CustomerID);
-                                return routeViaArds();
+                            var sticky;
+
+                            // 1) Payload-mapped agent WINS. The request explicitly names the agent this
+                            //    contact is mapped to (SocialMediaService's wa_agent_mapping, passed on the
+                            //    /Chat/:contactId body as agentMapped/agentResourceId/agentName). This
+                            //    overrides any stored conversation-history sticky agent.
+                            if (req.body.agentMapped && req.body.agentResourceId && req.body.agentName) {
+                                sticky = { agentId: req.body.agentResourceId, agentName: req.body.agentName };
+                                logger.info('[STICKY] step1a payload-mapped agent WINS: "%s" (id=%s) for "%s"',
+                                    req.body.agentName, req.body.agentResourceId, req.params.CustomerID);
                             }
 
-                            var sticky;
-                            try { sticky = JSON.parse(stickyVal); } catch (e) {
-                                logger.error('[STICKY] step2-FAIL bad JSON in sticky_agent_map val=%j -> routeViaArds : %s', stickyVal, e);
+                            // 2) Otherwise use the conversation-history sticky agent from Redis.
+                            if (!sticky && !err && stickyVal) {
+                                try {
+                                    sticky = JSON.parse(stickyVal);
+                                    logger.info('[STICKY] step1b using Redis history sticky "%s" (id=%s) for "%s"',
+                                        sticky && sticky.agentName, sticky && sticky.agentId, req.params.CustomerID);
+                                } catch (e) {
+                                    logger.error('[STICKY] step2-FAIL bad JSON in sticky_agent_map val=%j : %s', stickyVal, e);
+                                    sticky = undefined;
+                                }
+                            }
+
+                            if (!sticky) {
+                                logger.info('[STICKY] step1-NONE no sticky agent (err=%j, val=%j) -> routeViaArds for "%s"', err, stickyVal, req.params.CustomerID);
                                 return routeViaArds();
                             }
 
