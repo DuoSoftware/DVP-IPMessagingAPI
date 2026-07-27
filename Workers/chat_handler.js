@@ -65,7 +65,17 @@ var sendAutomatedCustomerMessage = function (req, tenantId, companyId, agentName
         },
         agent: agentName
     };
-    Common.http_post(req.body.call_back_url, payload, tenantId, companyId);
+    // Fire-and-forget, but MUST handle rejection: Common.http_post rejects (with an
+    // error) on network failure / non-200. An unhandled rejection here surfaces as a
+    // restify domain error and crashes the process.
+    Common.http_post(req.body.call_back_url, payload, tenantId, companyId)
+        .then(function () {
+            logger.info('[STICKY] automated message delivered to "%s"', req.params.CustomerID);
+        })
+        .catch(function (err) {
+            logger.error('[STICKY] automated message to "%s" failed (call_back_url=%s): %s',
+                req.params.CustomerID, req.body.call_back_url, err);
+        });
 };
 
 var registred_clinet = function (data) {

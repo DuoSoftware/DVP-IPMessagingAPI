@@ -264,13 +264,15 @@ module.exports.http_post = function (serviceUrl,postData,tenant,company) {
        request.post(options, function optionalCallback(err, httpResponse, body) {
             if (err) {
                 console.log('upload failed:', err);
-                reject(null);
+                // Never reject with null: an unhandled null rejection crashes restify's
+                // domain error handler (err._restify_next on null).
+                reject(err instanceof Error ? err : new Error('http_post request failed: ' + err));
             }
             else if(httpResponse.statusCode === 200){
                 fulfill(body)
             }
             else {
-                reject(null);
+                reject(new Error('http_post non-200 status: ' + (httpResponse && httpResponse.statusCode)));
             }
         });
     });
