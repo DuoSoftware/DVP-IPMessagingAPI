@@ -15,7 +15,6 @@ module.exports = {
             "mode":"instance",//instance, cluster, sentinel
             "ip": "172.16.25.32",
             "port": 6379,
-            "user": "duo",
             "db": 2,
             "password": "DuoS123",
             "sentinels":{
@@ -30,7 +29,6 @@ module.exports = {
 
             "ip" : "172.16.25.32",
             "port": 6379,
-            "user": "duo",
             "password": "DuoS123",
             "mode":"instance",//instance, cluster, sentinel
             "sentinels":{
@@ -44,8 +42,6 @@ module.exports = {
             "botclientusers":"ip_api_bot_online_users",
             "tokenduration":120, /*in secounds*/
             "longtermtokenduration":2592000, /*in secounds*/
-            "vdomain": "localhost",
-            "domain": "localhost",
             "port": "3002",
             "version": "1.0.0.0",
             //"messenger": "user",
