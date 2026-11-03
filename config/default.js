@@ -1,11 +1,11 @@
 module.exports = {
     
   "Mongo": {
-    "ip": "172.16.25.32",
+    "ip": "",
     "port": "27017",
     "dbname": "facetone",
-    "user": "duo",
-    "password": "DuoS123",
+    "user": "",
+    "password": "",
     "type": "mongodb"
   },
 
@@ -13,12 +13,12 @@ module.exports = {
     "Redis":
         {
             "mode":"instance",//instance, cluster, sentinel
-            "ip": "172.16.25.32",
+            "ip": "",
             "port": 6379,
             "db": 2,
-            "password": "DuoS123",
+            "password": "",
             "sentinels":{
-                "hosts": "138.197.90.92,45.55.205.92,138.197.90.92",
+                "hosts": "",
                 "port":16389,
                 "name":"redis-cluster"
             }
@@ -27,12 +27,12 @@ module.exports = {
     "Security":
         {
 
-            "ip" : "172.16.25.32",
+            "ip" : "",
             "port": 6379,
-            "password": "DuoS123",
+            "password": "",
             "mode":"instance",//instance, cluster, sentinel
             "sentinels":{
-                "hosts": "138.197.90.92,45.55.205.92,138.197.90.92",
+                "hosts": "",
                 "port":16389,
                 "name":"redis-cluster"
             }

@@ -32,17 +32,17 @@ Infrastructure, other services' addresses and platform settings. Other services 
 | `SYS_INTERACTIONS_VERSION` | API version used in DVP-Interactions URLs. | version | version string, e.g. 1.0.0.0 | 1.0.0.0 | no | no |
 | `SYS_IPMESSAGING_BOT_ONLINE_USERS` | Redis key that holds online chat-bot users. | string | Redis key, e.g. ip_api_bot_online_users | ip_api_bot_online_users | no | no |
 | `SYS_MONGO_DB` | MongoDB database name. | string | database name | facetone | no | no |
-| `SYS_MONGO_HOST` | MongoDB host(s). | host | host name or IP; comma-separated list for a replica set | (environment-specific) | yes | no |
-| `SYS_MONGO_PASSWORD` | MongoDB password. | string | password | `<secret>` | yes | yes |
+| `SYS_MONGO_HOST` | MongoDB host(s). | host | host name or IP; comma-separated list for a replica set | — | yes | no |
+| `SYS_MONGO_PASSWORD` | MongoDB password. | string | password | — | yes | yes |
 | `SYS_MONGO_PORT` | MongoDB port. | port | 1–65535; leave empty for mongodb+srv | 27017 | no | no |
 | `SYS_MONGO_REPLICA_SET` | MongoDB replica set name; used when SYS_MONGO_HOST lists several hosts. | string | replica set name | — | yes | no |
-| `SYS_MONGO_USER` | MongoDB user. | string | user name | duo | no | no |
+| `SYS_MONGO_USER` | MongoDB user. | string | user name | — | yes | no |
 | `SYS_REDIS_DB` | Main Redis database index. | int | 0–15 | 2 | no | no |
-| `SYS_REDIS_HOST` | Main Redis host. Also used for token checks (Security block). | host | host name or IP; comma-separated list in cluster mode | (environment-specific) | yes | no |
+| `SYS_REDIS_HOST` | Main Redis host. Also used for token checks (Security block). | host | host name or IP; comma-separated list in cluster mode | — | yes | no |
 | `SYS_REDIS_MODE` | How to connect to the main Redis. | enum | instance \| cluster \| sentinel | instance | no | no |
-| `SYS_REDIS_PASSWORD` | Main Redis password. | string | password | `<secret>` | yes | yes |
+| `SYS_REDIS_PASSWORD` | Main Redis password. | string | password | — | yes | yes |
 | `SYS_REDIS_PORT` | Main Redis port. | port | 1–65535 | 6379 | no | no |
-| `SYS_REDIS_SENTINEL_HOSTS` | Sentinel hosts, when SYS_REDIS_MODE is sentinel. | list | comma-separated host names | (environment-specific) | no | no |
+| `SYS_REDIS_SENTINEL_HOSTS` | Sentinel hosts, when SYS_REDIS_MODE is sentinel. | list | comma-separated host names | — | no | no |
 | `SYS_REDIS_SENTINEL_NAME` | Sentinel master name, when SYS_REDIS_MODE is sentinel. | string | sentinel master name | redis-cluster | no | no |
 | `SYS_REDIS_SENTINEL_PORT` | Sentinel port, when SYS_REDIS_MODE is sentinel. | port | 1–65535 | 16389 | no | no |
 
